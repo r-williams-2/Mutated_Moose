@@ -16,8 +16,12 @@
  * SplitCHWRes creates the residual for the chemical
  * potential in the split form of the Cahn-Hilliard
  * equation with a scalar (isotropic) mobility.
+ * Primary and secondary versions of this residual
+ * were constructed as the original variational
+ * derivative is now the difference of the different
+ * variational derivatives.
  */
-class SplitCHWResSecond : public SplitCHWResBaseSecond<Real>//, SplitCHWResBaseSecond<Real>
+class SplitCHWResSecond : public SplitCHWResBaseSecond<Real>// Public access to functions defined in new SplitCHWResBaseSecond
 {
 public:
   SplitCHWResSecond(const InputParameters & parameters);

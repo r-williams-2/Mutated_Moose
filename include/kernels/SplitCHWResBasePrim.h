@@ -25,6 +25,7 @@ InputParameters validParams<SplitCHWResBasePrim<>>();
  * potential in the split form of the Cahn-Hilliard
  * equation in a general way that can be templated to a scalar or
  * tensor mobility.
+ * This is the first of the two terms.
  */
 template <typename T>
 class SplitCHWResBasePrim : public DerivativeMaterialInterface<JvarMapKernelInterface<Kernel>>
@@ -40,8 +41,8 @@ protected:
   const MaterialPropertyName _mob_name;
   const MaterialProperty<T> & _mob;
 
-  unsigned int _c_i_var;
-  const VariableValue & _c_i;
+  unsigned int _c_i_var; // Syntax for defining the coupled concentration that this kernel applies to
+  const VariableValue & _c_i; // Syntax for defining the coupled concentration that this kernel applies to
 
   std::vector<const MaterialProperty<T> *> _dmobdarg;
 };
@@ -52,8 +53,8 @@ SplitCHWResBasePrim<T>::SplitCHWResBasePrim(const InputParameters & parameters)
   //: SplitCHBase(parameters),
     _mob_name(getParam<MaterialPropertyName>("mob_name")),
     _mob(getMaterialProperty<T>("mob_name")),
-    _c_i_var(coupled("c_i")),
-    _c_i(coupledValue("c_i"))
+    _c_i_var(coupled("c_i")), // Syntax for defining the coupled concentration that this kernel applies to
+    _c_i(coupledValue("c_i")) // Syntax for defining the coupled concentration that this kernel applies to
 {
   // Get number of coupled variables
   unsigned int nvar = _coupled_moose_vars.size();
@@ -70,7 +71,7 @@ template <typename T>
 Real
 SplitCHWResBasePrim<T>::computeQpResidual()
 {
-  return _mob[_qp] * (1 - _c_i[_qp]) * _grad_u[_qp] * _grad_test[_i][_qp];
+  return _mob[_qp] * (1 - _c_i[_qp]) * _grad_u[_qp] * _grad_test[_i][_qp]; // Form of the residual for M(1-c_i)*grad(mu_i)*grad(test). grad(mu_i) is the gradient of the variational derivative of F wrt c_1
 }
 
 template <typename T>

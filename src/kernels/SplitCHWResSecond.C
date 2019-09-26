@@ -9,6 +9,13 @@
 
 #include "SplitCHWResSecond.h"
 
+/**
+ * Primary and secondary versions of this residual
+ * were constructed as the original variational
+ * derivative is now the difference of the different
+ * variational derivatives.
+ */
+
 registerMooseObject("PhaseFieldApp", SplitCHWResSecond);
 
 template <>

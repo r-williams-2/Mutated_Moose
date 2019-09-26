@@ -30,13 +30,13 @@ protected:
   virtual Real computeQpOffDiagJacobian(unsigned int jvar);
 
   const MaterialProperty<Real> & _kappa;
-  const MaterialProperty<Real> & _no_mols;
-  unsigned int _w_var;
-  const VariableValue & _w;
-  unsigned int _c_j_var;
-  const VariableValue & _c_j;
+  const MaterialProperty<Real> & _no_mols; // Material property named _no_mols
+  unsigned int _w_var; // Syntax for coupled variable.
+  const VariableValue & _w; // Syntax for coupled variable.
+  unsigned int _c_j_var; // Syntax for coupled variable. Needed for gradient of this variable.
+  const VariableValue & _c_j; // Syntax for coupled variable. Needed for gradient of this variable.
   //std::vector<const VariableGradient *> _grad_coupled;
-  const VariableGradient & _grad_coupled;
+  const VariableGradient & _grad_coupled; // Gradient of the coupled variable.
 };
 
 #endif // SPLITCHCRES_H

@@ -41,11 +41,11 @@ protected:
   const MaterialPropertyName _mob_name;
   const MaterialProperty<T> & _mob;
 
-  unsigned int _c_i_var;
-  const VariableValue & _c_i;
+  unsigned int _c_i_var; // Syntax for defining the coupled concentration that this kernel applies to
+  const VariableValue & _c_i; // Syntax for defining the coupled concentration that this kernel applies to
 
-  unsigned int _c_j_var;
-  const VariableValue & _c_j;
+  unsigned int _c_j_var; // Syntax for defining the coupled concentration that this kernel applies to
+  const VariableValue & _c_j; // Syntax for defining the coupled concentration that this kernel applies to
 
   std::vector<const MaterialProperty<T> *> _dmobdarg;
 };
@@ -56,10 +56,10 @@ SplitCHWResBaseSecond<T>::SplitCHWResBaseSecond(const InputParameters & paramete
   //: SplitCHBase(parameters),
     _mob_name(getParam<MaterialPropertyName>("mob_name")),
     _mob(getMaterialProperty<T>("mob_name")),
-    _c_i_var(coupled("c_i")),
-    _c_i(coupledValue("c_i")),
-    _c_j_var(coupled("c_j")),
-    _c_j(coupledValue("c_j"))
+    _c_i_var(coupled("c_i")), // Syntax for defining the coupled concentration that this kernel applies to
+    _c_i(coupledValue("c_i")), // Syntax for defining the coupled concentration that this kernel applies to
+    _c_j_var(coupled("c_j")), // Syntax for defining the coupled concentration that this kernel applies to
+    _c_j(coupledValue("c_j")) // Syntax for defining the coupled concentration that this kernel applies to
 {
   // Get number of coupled variables
   unsigned int nvar = _coupled_moose_vars.size();
@@ -76,7 +76,7 @@ template <typename T>
 Real
 SplitCHWResBaseSecond<T>::computeQpResidual()
 {
-  return _mob[_qp] * (1 - _c_j[_qp]) * _grad_u[_qp] * _grad_test[_i][_qp];
+  return _mob[_qp] * _c_j[_qp] * _grad_u[_qp] * _grad_test[_i][_qp]; // Residual for the term M*c_j*grad(mu_j)*grad(test). grad(mu_j) is the gradient of the variational derivative of F wrt c_j.
 }
 
 template <typename T>
