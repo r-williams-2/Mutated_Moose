@@ -83,17 +83,24 @@ template <typename T>
 Real
 SplitCHWResBaseSecond<T>::computeQpJacobian()
 {
-  return _mob[_qp] * _grad_phi[_j][_qp] * _grad_test[_i][_qp];
+  return _mob[_qp] * _c_j[_qp] * _grad_phi[_j][_qp] * _grad_test[_i][_qp];
 }
 
 template <typename T>
 Real
 SplitCHWResBaseSecond<T>::computeQpOffDiagJacobian(unsigned int jvar)
 {
-  // get the coupled variable jvar is referring to
-  const unsigned int cvar = mapJvarToCvar(jvar);
+  if (jvar == _c_i_var)
+  {
+    return _mob[_qp] * _phi[_j][_qp] * _grad_u[_qp] * _grad_test[_i][_qp];
+  }
+  else
+  {
+    // get the coupled variable jvar is referring to
+    const unsigned int cvar = mapJvarToCvar(jvar);
 
-  return (*_dmobdarg[cvar])[_qp] * _phi[_j][_qp] * _grad_u[_qp] * _grad_test[_i][_qp];
+    return (*_dmobdarg[cvar])[_qp] * _phi[_j][_qp] * _c_j[_qp] * _grad_u[_qp] * _grad_test[_i][_qp];
+  }
 }
 
 #endif // SPLITCHWRESBASESECOND_H
