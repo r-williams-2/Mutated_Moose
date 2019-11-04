@@ -7,8 +7,8 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#ifndef SPLITCHWRESBASESECOND_H
-#define SPLITCHWRESBASESECOND_H
+#ifndef SPLITCHWRESBASE_H
+#define SPLITCHWRESBASE_H
 
 #include "Kernel.h"
 #include "JvarMapInterface.h"
@@ -16,10 +16,10 @@
 
 // Forward declarations
 template <typename T = void>
-class SplitCHWResBaseSecond;
+class SplitCHWResBase;
 
 template <>
-InputParameters validParams<SplitCHWResBaseSecond<>>();
+InputParameters validParams<SplitCHWResBase<>>();
 
 /**
  * SplitCHWresBase implements the residual for the chemical
@@ -28,10 +28,10 @@ InputParameters validParams<SplitCHWResBaseSecond<>>();
  * tensor mobility.
  */
 template <typename T>
-class SplitCHWResBaseSecond : public DerivativeMaterialInterface<JvarMapKernelInterface<Kernel>>
+class SplitCHWResBase : public DerivativeMaterialInterface<JvarMapKernelInterface<Kernel>>
 {
 public:
-  SplitCHWResBaseSecond(const InputParameters & parameters);
+  SplitCHWResBase(const InputParameters & parameters);
 
 protected:
   virtual Real computeQpResidual();
@@ -55,9 +55,8 @@ protected:
 };
 
 template <typename T>
-SplitCHWResBaseSecond<T>::SplitCHWResBaseSecond(const InputParameters & parameters)
+SplitCHWResBase<T>::SplitCHWResBase(const InputParameters & parameters)
   : DerivativeMaterialInterface<JvarMapKernelInterface<Kernel>>(parameters),
-  //: SplitCHBase(parameters),
     _mob_name(getParam<MaterialPropertyName>("mob_name")),
     _mob(getMaterialProperty<T>("mob_name")),
     _c_i_var(coupled("c_i")), // Syntax for defining the coupled concentration that this kernel applies to
@@ -81,41 +80,41 @@ SplitCHWResBaseSecond<T>::SplitCHWResBaseSecond(const InputParameters & paramete
 
 template <typename T>
 Real
-SplitCHWResBaseSecond<T>::computeQpResidual()
+SplitCHWResBase<T>::computeQpResidual()
 {
-  return _mob[_qp] * _c_j[_qp] * _grad_coupled[_qp] * _grad_test[_i][_qp]; // Residual for the term M*c_j*grad(mu_j)*grad(test). grad(mu_j) is the gradient of the variational derivative of F wrt c_j.
+  return _mob[_qp] * (1.0 - _c_i[_qp]) * _grad_u[_qp] * _grad_test[_i][_qp] - _mob[_qp] * _c_j[_qp] * _grad_coupled[_qp] * _grad_test[_i][_qp]; // Form of the residual for M(1-c_i)*grad(mu_i)*grad(test). grad(mu_i) is the gradient of the variational derivative of F wrt c_1
 }
 
 template <typename T>
 Real
-SplitCHWResBaseSecond<T>::computeQpJacobian()
+SplitCHWResBase<T>::computeQpJacobian()
 {
-  return 0.0;
+  return _mob[_qp] * (1.0 - _c_i[_qp]) * _grad_phi[_j][_qp] * _grad_test[_i][_qp];
 }
 
 template <typename T>
 Real
-SplitCHWResBaseSecond<T>::computeQpOffDiagJacobian(unsigned int jvar)
+SplitCHWResBase<T>::computeQpOffDiagJacobian(unsigned int jvar)
 {
   if (jvar == _c_i_var)
   {
-    return 0.0;
+    return - _mob[_qp] * _phi[_j][_qp] * _grad_u[_qp] * _grad_test[_i][_qp];
   }
   else if (jvar == _c_j_var)
   {
-    return _mob[_qp] * _phi[_j][_qp] * _grad_coupled[_qp] * _grad_test[_i][_qp];
+    return -_mob[_qp] * _phi[_j][_qp] * _grad_coupled[_qp] * _grad_test[_i][_qp];
   }
   else if (jvar == _mu_j_var)
   {
-    return _mob[_qp] * _c_j[_qp] * _grad_phi[_j][_qp] * _grad_test[_i][_qp];
+    return -_mob[_qp] * _c_j[_qp] * _grad_phi[_j][_qp] * _grad_test[_i][_qp];
   }
   else
   {
     // get the coupled variable jvar is referring to
     const unsigned int cvar = mapJvarToCvar(jvar);
 
-    return (*_dmobdarg[cvar])[_qp] * _phi[_j][_qp] * _c_j[_qp] * _grad_u[_qp] * _grad_test[_i][_qp];
+    return (*_dmobdarg[cvar])[_qp] * _phi[_j][_qp] * (1.0 - _c_i[_qp]) * _grad_u[_qp] * _grad_test[_i][_qp];
   }
 }
 
-#endif // SPLITCHWRESBASESECOND_H
+#endif // SPLITCHWRESBASE_H

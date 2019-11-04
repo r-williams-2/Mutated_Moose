@@ -90,12 +90,15 @@ SplitCHCRes::computeQpOffDiagJacobian(unsigned int jvar)
   {
     return -_phi[_j][_qp] * _test[_i][_qp];
   }
-  if (jvar == _c_j_var)
+  else if (jvar == _c_j_var)
   {
     return (1.0 / _no_mols[_qp]) * _kappa[_qp] * _grad_phi[_j][_qp] * _grad_test[_i][_qp];
     // for(int i = 0; i < v.size(); i++){ // Code for arbitrary number of concentrations.
 	  //   printf("%d", v[i]);
     // }
   }
-  return 0.0;
+  else
+  {
+    return 0.0;
+  }
 }

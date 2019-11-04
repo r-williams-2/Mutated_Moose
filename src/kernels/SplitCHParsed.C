@@ -76,10 +76,20 @@ Real
 SplitCHParsed::computeQpOffDiagJacobian(unsigned int jvar)
 {
   if (jvar == _w_var)
+  {
     return SplitCHCRes::computeQpOffDiagJacobian(jvar);
-
+  }
+  else if (jvar == _c_j_var)
+  {
+    const unsigned int cvar = mapJvarToCvar(jvar);
+    return SplitCHCRes::computeQpOffDiagJacobian(jvar) + (*_d2Fdcdarg[cvar])[_qp] * _phi[_j][_qp] * _test[_i][_qp];
+  }
+  else
+  {
   // get the coupled variable jvar is referring to
   const unsigned int cvar = mapJvarToCvar(jvar);
-
+  
   return (*_d2Fdcdarg[cvar])[_qp] * _phi[_j][_qp] * _test[_i][_qp];
+  }
+  
 }

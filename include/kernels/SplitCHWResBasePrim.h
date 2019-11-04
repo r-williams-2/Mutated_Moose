@@ -71,14 +71,14 @@ template <typename T>
 Real
 SplitCHWResBasePrim<T>::computeQpResidual()
 {
-  return _mob[_qp] * (1 - _c_i[_qp]) * _grad_u[_qp] * _grad_test[_i][_qp]; // Form of the residual for M(1-c_i)*grad(mu_i)*grad(test). grad(mu_i) is the gradient of the variational derivative of F wrt c_1
+  return _mob[_qp] * (1.0 - _c_i[_qp]) * _grad_u[_qp] * _grad_test[_i][_qp]; // Form of the residual for M(1-c_i)*grad(mu_i)*grad(test). grad(mu_i) is the gradient of the variational derivative of F wrt c_1
 }
 
 template <typename T>
 Real
 SplitCHWResBasePrim<T>::computeQpJacobian()
 {
-  return _mob[_qp] * (1 - _c_i[_qp]) * _grad_phi[_j][_qp] * _grad_test[_i][_qp];
+  return _mob[_qp] * (1.0 - _c_i[_qp]) * _grad_phi[_j][_qp] * _grad_test[_i][_qp];
 }
 
 template <typename T>
@@ -94,7 +94,7 @@ SplitCHWResBasePrim<T>::computeQpOffDiagJacobian(unsigned int jvar)
     // get the coupled variable jvar is referring to
     const unsigned int cvar = mapJvarToCvar(jvar);
 
-    return (*_dmobdarg[cvar])[_qp] * _phi[_j][_qp] * (1 - _c_i[_qp]) * _grad_u[_qp] * _grad_test[_i][_qp];
+    return (*_dmobdarg[cvar])[_qp] * _phi[_j][_qp] * (1.0 - _c_i[_qp]) * _grad_u[_qp] * _grad_test[_i][_qp];
   }
 }
 
