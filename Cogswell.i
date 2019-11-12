@@ -10,9 +10,9 @@
   ny = 5#100
   nz = 0
   xmin = 0
-  xmax = 25
+  xmax = 25.0e-9
   ymin = 0
-  ymax = 25
+  ymax = 25.0e-9
   zmin = 0
   zmax = 0
   uniform_refine = 2
@@ -39,22 +39,22 @@
   [./c1]   # Mole fraction of species 1 (unitless)
     order = FIRST
     family = LAGRANGE
-    scaling = 1e-25
+    # scaling = 1e-12
   [../]
   [./c2]   # Mole fraction of species 2 (unitless)
     order = FIRST
     family = LAGRANGE
-    scaling = 1e-25
+    # scaling = 1e-12
   [../]
   [./mu1]   # Variational derivative for diffusion of species 1. Maybe in eV/mol
     order = FIRST
     family = LAGRANGE
-    scaling = 1.0e15
+    # scaling = 1.0e32
   [../]
   [./mu2]   # Variational derivative for diffusion of species 1. Maybe in eV/mol
     order = FIRST
     family = LAGRANGE
-    scaling = 1.0e15
+    # scaling = 1.0e32
   [../]
 []
 
@@ -111,8 +111,11 @@
     # value_left = 0.6
     # value_right = 0.3
     type = MultiBoundingBoxIC
-    corners = '11.0 11.0 0   5.0 11.0 0   14.0 11.0 0   0.0 14.0 0   0.0 0.0 0   0.0 11.0 0   20.0 11.0 0'
-    opposite_corners = '14.0 14.0 0   11.0 14.0 0   20.0 14.0 0   25.0 25.0 0   25.0 11.0 0   5.0 14.0 0   25.0 14.0 0'
+    # corners = '11.0 11.0 0   5.0 11.0 0   14.0 11.0 0   0.0 14.0 0   0.0 0.0 0   0.0 11.0 0   20.0 11.0 0'
+    # opposite_corners = '14.0 14.0 0   11.0 14.0 0   20.0 14.0 0   25.0 25.0 0   25.0 11.0 0   5.0 14.0 0   25.0 14.0 0'
+    # inside = '0.6   0.3   0.3   0.3   0.3   0.3   0.3'
+    corners = '11.0e-9 11.0e-9 0   5.0e-9 11.0e-9 0   14.0e-9 11.0e-9 0   0.0e-9 14.0e-9 0   0.0 0.0 0   0.0 11.0e-9 0   20.0e-9 11.0e-9 0'
+    opposite_corners = '14.0e-9 14.0e-9 0   11.0e-9 14.0e-9 0   20.0e-9 14.0e-9 0   25.0e-9 25.0e-9 0   25.0e-9 11.0e-9 0   5.0e-9 14.0e-9 0   25.0e-9 14.0e-9 0'
     inside = '0.6   0.3   0.3   0.3   0.3   0.3   0.3'
     #outside = 0.1
     variable = c1
@@ -144,8 +147,11 @@
     # x1 = 12.5
     # y1 = 12.5
     type = MultiBoundingBoxIC
-    corners = '11.0 11.0 0   5.0 11.0 0   14.0 11.0 0   0.0 14.0 0   0.0 0.0 0   0.0 11.0 0   20.0 11.0 0'
-    opposite_corners = '14.0 14.0 0   11.0 14.0 0   20.0 14.0 0   25.0 25.0 0   25.0 11.0 0   5.0 14.0 0   25.0 14.0 0'
+    # corners = '11.0 11.0 0   5.0 11.0 0   14.0 11.0 0   0.0 14.0 0   0.0 0.0 0   0.0 11.0 0   20.0 11.0 0'
+    # opposite_corners = '14.0 14.0 0   11.0 14.0 0   20.0 14.0 0   25.0 25.0 0   25.0 11.0 0   5.0 14.0 0   25.0 14.0 0'
+    # inside = '0.3   0.6   0.6   0.3   0.3   0.3   0.3'
+    corners = '11.0e-9 11.0e-9 0   5.0e-9 11.0e-9 0   14.0e-9 11.0e-9 0   0.0 14.0e-9 0   0.0 0.0 0   0.0 11.0e-9 0   20.0e-9 11.0e-9 0'
+    opposite_corners = '14.0e-9 14.0e-9 0   11.0e-9 14.0e-9 0   20.0e-9 14.0e-9 0   25.0e-9 25.0e-9 0   25.0e-9 11.0e-9 0   5.0e-9 14.0e-9 0   25.0e-9 14.0e-9 0'
     inside = '0.3   0.6   0.6   0.3   0.3   0.3   0.3'
     #outside = 0.1
     variable = c2
@@ -239,9 +245,13 @@
     # an equation rather than a constant.
     type = GenericFunctionMaterial
     prop_names = 'kappa_c M sys_mols'
+    # REALISTIC PROPS
     prop_values = ' 6.6512e-8
                     (1.0e-8)*0.5/(8314.0*1000.0)
                     (1.0e-9)*(25.0e-9)*(25.0e-9)/(1.0e-5)'
+    # prop_values = ' 6.6512e-8*1e-30
+    #                 ((1.0e-8)*((1.0e+9)^2)*0.5/(6.242e+18*8314.0*1000.0))/1e-30
+    #                 (1.0)*(25.0)*(25.0)/(1.0e+22)'
     # prop_values = '6.6512e-9
     #                (1.0*10.0^-8)*0.5/(8314.0*1000.0)
     #                1.0'
@@ -253,13 +263,16 @@
     #                25.0*25.0/(10.0^(22.0))'#x1*x2*(c1/Vm1+c2/Vm2+(1-c1-c2)/vm3)'
                    # kappa_c*eV_J*nm_m^2*d
                    # M*nm_m^2/eV_J/d
+    # prop_values = '6.512e-2
+    #                (1.0*10.0^-2)*0.5/(8314.0*1000.0)
+    #                1.0'
   [../]
   [./local_energy]
     # Defines the function for the local free energy density as given in the
     # problem, then converts units and adds scaling factor.
     type = DerivativeParsedMaterial
     f_name = f_loc
-    args = 'c1   c2   T'
+    args = 'c1   c2   T'#   c3
     # WORKING
     # constant_names = 'n   Omega12   Omega13   Omega23   R'
     # constant_expressions = '1.0   -10.0   -10.0   -10   8.314'
@@ -269,9 +282,18 @@
     # WORKING
     # constant_expressions = '1.0   -10.0*8314.0   -10.0*8314.0   -10.0*8314.0   8314.0'
     # function = '(1/n)*(Omega12*c1*c2 + Omega13*c1*c3 + Omega23*c2*c3 + R*T*(c1*log(c1) + c2*log(c2) + c3*log(c3)))'
+    # NOT WORKING, UNNORMALISED
     constant_names = 'Nmols   Omega12   Omega13   Omega23   R'
     constant_expressions = '(1.0e-9)*(25.0e-9)*(25.0e-9)/(1.0e-5)   -10.0*8314.0   -10.0*8314.0   -10.0*8314.0   8314.0'
-    function = '(1/Nmols)*(Omega12*c1*c2 + Omega13*c1*(1.0-c1-c2) + Omega23*c2*(1.0-c1-c2) + R*T*(c1*log(c1) + c2*log(c2) + (1.0-c1-c2)*log(1.0-c1-c2)))'
+    function = '(1.0/Nmols)*(Omega12*c1*c2 + Omega13*c1*(1.0-c1-c2) + Omega23*c2*(1.0-c1-c2) + R*T*(c1*log(c1) + c2*log(c2) + (1.0-c1-c2)*log(1.0-c1-c2)))'
+    # constant_names = 'Nmols   Omega12   Omega13   Omega23   R'
+    # constant_expressions = '(1.0)*(25.0)*(25.0)/(1.0e+22)   -10.0*8314.0   -10.0*8314.0   -10.0*8314.0   8314.0'
+    # function = '((1e-30)*(6.242e+18)/Nmols)*(Omega12*c1*c2 + Omega13*c1*(1.0-c1-c2) + Omega23*c2*(1.0-c1-c2) + R*(c1*log(c1) + c2*log(c2) + (1.0-c1-c2)*log(1.0-c1-c2)))'
+    # OTHER PROPS
+    # constant_names = 'n   Omega12   Omega13   Omega23   R'
+    # constant_expressions = '1.0   -10.0*8314.0   -10.0*8314.0   -10.0*8314.0   8314.0'
+    # function = '(1/n)*(Omega12*c1*c2 + Omega13*c1*c3 + Omega23*c2*c3 + R*T*(c1*log(c1) + c2*log(c2) + c3*log(c3)))'
+
     derivative_order = 2
   [../]
 []
@@ -295,15 +317,67 @@
   [../]
 []
 
+# # [Preconditioning]
+# #   # [./coupled]
+# #   #   type = SMP
+# #   #   full = true
+# #   # [../]
+# #   # [./FDP]
+# #   #   type = FDP
+# #   #   full = true
+# #   # [../]
+# # []
+
+# [Executioner]
+#   type = Transient
+#   solve_type = NEWTON#PJFNK
+#   l_max_its = 100
+#   l_tol = 1e-6
+#   nl_max_its = 50
+#   nl_rel_tol = 1e-8
+#   # nl_abs_tol = 1e-9
+#   # line_search = none
+#   end_time = 600.0#7200   # seconds
+#   petsc_options = '-ksp_converged_reason -ksp_monitor_true_residual -snes_converged_reason -snes_linesearch_monitor' #-snes_check_jacobian -pc_svd_monitor -snes_check_jacobian_view -snes_view -log_view    -snes_fd - -snes_error_if_not_converged -ksp_error_if_not_converged'
+#   petsc_options_iname = '-snes_linesearch_type -pc_type'#-pc_factor_mat_solver_package
+#   petsc_options_value = 'basic lu'#svd lu mumps
+#   # petsc_options_iname = '-pc_type -ksp_gmres_restart -sub_ksp_type
+#   #                        -sub_pc_type -pc_asm_overlap'
+#   # petsc_options_value = 'asm      31                  preonly
+#   #                        ilu          1'
+#   [./TimeStepper]
+#     type = IterationAdaptiveDT
+#     dt = 0.1
+#     cutback_factor = 0.7
+#     growth_factor = 1.5
+#     optimal_iterations = 15
+#   [../]
+#   [./Adaptivity]
+#     coarsen_fraction = 0.1
+#     refine_fraction = 0.7
+#     max_h_level = 2
+#   [../]
+# []
+
+# [Debug]
+#   show_var_residual_norms = true
+# []
+
+# [Outputs]
+#   exodus = true
+#   console = true
+#   # csv = true
+#   [./console]
+#     type = Console
+#     max_rows = 10
+#   [../]
+# []
+
 [Preconditioning]
   [./coupled]
     type = SMP
     full = true
   [../]
-#   # [./FDP]
-#   #   type = FDP
-#   #   full = true
-#   # [../]
 []
 
 [Executioner]
@@ -312,17 +386,16 @@
   l_max_its = 30
   l_tol = 1e-6
   nl_max_its = 50
-  nl_rel_tol = 1e-8
-  #nl_abs_tol = 1e-9
-  line_search = none
-  end_time = 600.0#7200   # seconds
-  petsc_options = '-ksp_converged_reason -snes_converged_reason -snes_check_jacobian' #-snes_check_jacobian_view -snes_view -log_view    -snes_fd - -snes_error_if_not_converged -ksp_error_if_not_converged'
-  petsc_options_iname = '-pc_type -pc_factor_mat_solver_package'
-  petsc_options_value = 'lu mumps'
+  # nl_abs_tol = 1e-9
+  nl_rel_tol = 1e-3
+  end_time = 600.0   # seconds.
+  automatic_scaling = true
   # petsc_options_iname = '-pc_type -ksp_gmres_restart -sub_ksp_type
   #                        -sub_pc_type -pc_asm_overlap'
   # petsc_options_value = 'asm      31                  preonly
   #                        ilu          1'
+  petsc_options_iname = '-pc_type'
+  petsc_options_value = 'lu'
   [./TimeStepper]
     type = IterationAdaptiveDT
     dt = 0.1
@@ -344,7 +417,7 @@
 [Outputs]
   exodus = true
   console = true
-  # csv = true
+  #csv = true
   [./console]
     type = Console
     max_rows = 10

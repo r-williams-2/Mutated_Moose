@@ -40,9 +40,10 @@ SplitCHParsed::SplitCHParsed(const InputParameters & parameters)
   _d2Fdcdarg.resize(_nvar);
 
   // Iterate over all coupled variables
-  for (unsigned int i = 0; i < _nvar; ++i)
+  for (unsigned int i = 0; i < _nvar; ++i){
     _d2Fdcdarg[i] =
         &getMaterialPropertyDerivative<Real>("f_name", _var.name(), _coupled_moose_vars[i]->name());
+    }
 }
 
 void
@@ -82,14 +83,16 @@ SplitCHParsed::computeQpOffDiagJacobian(unsigned int jvar)
   else if (jvar == _c_j_var)
   {
     const unsigned int cvar = mapJvarToCvar(jvar);
+    
     return SplitCHCRes::computeQpOffDiagJacobian(jvar) + (*_d2Fdcdarg[cvar])[_qp] * _phi[_j][_qp] * _test[_i][_qp];
   }
   else
   {
   // get the coupled variable jvar is referring to
-  const unsigned int cvar = mapJvarToCvar(jvar);
+  //const unsigned int cvar = mapJvarToCvar(jvar);
   
-  return (*_d2Fdcdarg[cvar])[_qp] * _phi[_j][_qp] * _test[_i][_qp];
+  //return (*_d2Fdcdarg[cvar])[_qp] * _phi[_j][_qp] * _test[_i][_qp];
+  return 0.0;
   }
   
 }

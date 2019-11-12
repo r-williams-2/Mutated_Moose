@@ -102,11 +102,11 @@ SplitCHWResBase<T>::computeQpOffDiagJacobian(unsigned int jvar)
   }
   else if (jvar == _c_j_var)
   {
-    return -_mob[_qp] * _phi[_j][_qp] * _grad_coupled[_qp] * _grad_test[_i][_qp];
+    return - _mob[_qp] * _phi[_j][_qp] * _grad_coupled[_qp] * _grad_test[_i][_qp];
   }
   else if (jvar == _mu_j_var)
   {
-    return -_mob[_qp] * _c_j[_qp] * _grad_phi[_j][_qp] * _grad_test[_i][_qp];
+    return - _mob[_qp] * _c_j[_qp] * _grad_phi[_j][_qp] * _grad_test[_i][_qp];
   }
   else
   {
