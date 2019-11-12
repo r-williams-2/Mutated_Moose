@@ -7,16 +7,15 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#ifndef EULERANGLEPROVIDER2RGBAUX_H
-#define EULERANGLEPROVIDER2RGBAUX_H
+#pragma once
 
 #include "AuxKernel.h"
+#include "EBSDReader.h"
 #include "EulerAngleProvider.h"
-#include "GrainTracker.h"
+#include "GrainTrackerInterface.h"
 
 // Forward Declarations
 class EulerAngleProvider2RGBAux;
-class GrainTracker;
 class EulerAngleProvider;
 
 template <>
@@ -29,10 +28,14 @@ class EulerAngleProvider2RGBAux : public AuxKernel
 {
 public:
   EulerAngleProvider2RGBAux(const InputParameters & parameters);
+  virtual unsigned int getNumGrains() const;
 
 protected:
   virtual Real computeValue();
   virtual void precalculateValue();
+
+  /// Optional phase number needed for global grain index retrieval
+  const unsigned int _phase;
 
   /// Reference direction of the sample
   const unsigned int _sd;
@@ -46,8 +49,11 @@ protected:
   /// Object providing the Euler angles
   const EulerAngleProvider & _euler;
 
+  /// EBSDReader Object
+  const EBSDReader * _ebsd_reader;
+
   /// Grain tracker object
-  const GrainTracker & _grain_tracker;
+  const GrainTrackerInterface & _grain_tracker;
 
   /// precalculated element value
   Real _value;
@@ -55,5 +61,3 @@ protected:
   /// Vector containing values for color in regions without grains
   const Point _no_grain_color;
 };
-
-#endif // EULERANGLEPROVIDER2RGBAUX_H

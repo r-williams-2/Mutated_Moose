@@ -7,8 +7,7 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#ifndef FEATUREFLOODCOUNTAUX_H
-#define FEATUREFLOODCOUNTAUX_H
+#pragma once
 
 #include "AuxKernel.h"
 #include "FeatureFloodCount.h"
@@ -35,8 +34,8 @@ public:
   virtual ~FeatureFloodCountAux() {}
 
 protected:
-  virtual Real computeValue();
-  virtual void precalculateValue();
+  virtual Real computeValue() override;
+  virtual void precalculateValue() override;
 
   /// Function being used to compute the value of this kernel
   const FeatureFloodCount & _flood_counter;
@@ -51,4 +50,3 @@ protected:
   Real _value;
 };
 
-#endif // FEATUREFLOODCOUNTAUX_H

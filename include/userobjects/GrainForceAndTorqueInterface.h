@@ -7,10 +7,16 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#ifndef GRAINFORCEANDTORQUEINTERFACE_H
-#define GRAINFORCEANDTORQUEINTERFACE_H
+#pragma once
 
 #include "MooseObject.h"
+
+namespace libMesh
+{
+template <typename>
+class VectorValue;
+typedef VectorValue<Real> RealGradient;
+}
 
 /**
  * This class provides interface for extracting the forces and torques computed in other UserObjects
@@ -24,4 +30,3 @@ public:
   virtual const std::vector<std::vector<Real>> & getForceEtaJacobians() const = 0;
 };
 
-#endif // GRAINFORCEANDTORQUEINTERFACE_H

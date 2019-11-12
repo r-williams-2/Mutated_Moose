@@ -7,8 +7,7 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#ifndef POLYCRYSTALUSEROBJECTBASE_H
-#define POLYCRYSTALUSEROBJECTBASE_H
+#pragma once
 
 #include "FeatureFloodCount.h"
 
@@ -171,6 +170,8 @@ private:
   std::vector<unsigned int> _prealloc_tmp_grains;
 
   std::map<dof_id_type, std::vector<unsigned int>> _entity_to_grain_cache;
-};
 
-#endif // POLYCRYSTALUSEROBJECTBASE_H
+  /// Timers
+  const PerfID _execute_timer;
+  const PerfID _finalize_timer;
+};

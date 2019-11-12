@@ -6,6 +6,7 @@
 //*
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
+
 #include "DeformedGrainMaterial.h"
 #include "GrainTrackerInterface.h"
 
@@ -82,7 +83,7 @@ DeformedGrainMaterial::computeQpProperties()
 
   // loop over active OPs
   bool one_active = false;
-  for (auto op_index = beginIndex(op_to_grains); op_index < op_to_grains.size(); ++op_index)
+  for (MooseIndex(op_to_grains) op_index = 0; op_index < op_to_grains.size(); ++op_index)
   {
     if (op_to_grains[op_index] == FeatureFloodCount::invalid_id)
       continue;

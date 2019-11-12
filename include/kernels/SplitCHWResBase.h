@@ -7,8 +7,7 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#ifndef SPLITCHWRESBASE_H
-#define SPLITCHWRESBASE_H
+#pragma once
 
 #include "Kernel.h"
 #include "JvarMapInterface.h"
@@ -36,21 +35,22 @@ public:
 protected:
   virtual Real computeQpResidual();
   virtual Real computeQpJacobian();
+  virtual Real computeQpWJacobian();
   virtual Real computeQpOffDiagJacobian(unsigned int jvar);
 
   const MaterialPropertyName _mob_name;
   const MaterialProperty<T> & _mob;
 
-  unsigned int _c_i_var; // Syntax for defining the coupled concentration that this kernel applies to
-  const VariableValue & _c_i; // Syntax for defining the coupled concentration that this kernel applies to
+  /// is the kernel used in a coupled form?
+  const bool _is_coupled;
 
-  unsigned int _c_j_var; // Syntax for defining the coupled concentration that this kernel applies to
-  const VariableValue & _c_j; // Syntax for defining the coupled concentration that this kernel applies to
+  /// int label for the chemical potential
+  unsigned int _w_var;
 
-  unsigned int _mu_j_var; // Syntax for coupled variable. Needed for gradient of this variable.
-  const VariableValue & _mu_j;
-  const VariableGradient & _grad_coupled; // Gradient of the coupled variable.
+  /// Variable value for the chemical potential
+  const VariableGradient & _grad_w;
 
+  /// derivatives of the mobility
   std::vector<const MaterialProperty<T> *> _dmobdarg;
 };
 
@@ -59,13 +59,9 @@ SplitCHWResBase<T>::SplitCHWResBase(const InputParameters & parameters)
   : DerivativeMaterialInterface<JvarMapKernelInterface<Kernel>>(parameters),
     _mob_name(getParam<MaterialPropertyName>("mob_name")),
     _mob(getMaterialProperty<T>("mob_name")),
-    _c_i_var(coupled("c_i")), // Syntax for defining the coupled concentration that this kernel applies to
-    _c_i(coupledValue("c_i")), // Syntax for defining the coupled concentration that this kernel applies to
-    _c_j_var(coupled("c_j")), // Syntax for defining the coupled concentration that this kernel applies to
-    _c_j(coupledValue("c_j")), // Syntax for defining the coupled concentration that this kernel applies to
-    _mu_j_var(coupled("mu_j")), // Syntax for defining the coupled VALUE that this kernel applies to
-    _mu_j(coupledValue("mu_j")), // Syntax for defining the coupled VALUE that this kernel applies to
-    _grad_coupled(coupledGradient("mu_j")) // Syntax for gradient of coupled concentrations.
+    _is_coupled(isCoupled("w")),
+    _w_var(_is_coupled ? coupled("w") : _var.number()),
+    _grad_w(_is_coupled ? coupledGradient("w") : _grad_u)
 {
   // Get number of coupled variables
   unsigned int nvar = _coupled_moose_vars.size();
@@ -82,39 +78,33 @@ template <typename T>
 Real
 SplitCHWResBase<T>::computeQpResidual()
 {
-  return _mob[_qp] * (1.0 - _c_i[_qp]) * _grad_u[_qp] * _grad_test[_i][_qp] - _mob[_qp] * _c_j[_qp] * _grad_coupled[_qp] * _grad_test[_i][_qp]; // Form of the residual for M(1-c_i)*grad(mu_i)*grad(test). grad(mu_i) is the gradient of the variational derivative of F wrt c_1
+  return _mob[_qp] * _grad_w[_qp] * _grad_test[_i][_qp];
 }
 
 template <typename T>
 Real
 SplitCHWResBase<T>::computeQpJacobian()
 {
-  return _mob[_qp] * (1.0 - _c_i[_qp]) * _grad_phi[_j][_qp] * _grad_test[_i][_qp];
+  return (_is_coupled && _w_var != _var.number()) ? 0.0 : computeQpWJacobian();
+}
+
+template <typename T>
+Real
+SplitCHWResBase<T>::computeQpWJacobian()
+{
+  return _mob[_qp] * _grad_phi[_j][_qp] * _grad_test[_i][_qp];
 }
 
 template <typename T>
 Real
 SplitCHWResBase<T>::computeQpOffDiagJacobian(unsigned int jvar)
 {
-  if (jvar == _c_i_var)
-  {
-    return - _mob[_qp] * _phi[_j][_qp] * _grad_u[_qp] * _grad_test[_i][_qp];
-  }
-  else if (jvar == _c_j_var)
-  {
-    return - _mob[_qp] * _phi[_j][_qp] * _grad_coupled[_qp] * _grad_test[_i][_qp];
-  }
-  else if (jvar == _mu_j_var)
-  {
-    return - _mob[_qp] * _c_j[_qp] * _grad_phi[_j][_qp] * _grad_test[_i][_qp];
-  }
-  else
-  {
-    // get the coupled variable jvar is referring to
-    const unsigned int cvar = mapJvarToCvar(jvar);
+  // c Off-Diagonal Jacobian
+  if (_w_var == jvar)
+    return computeQpWJacobian();
 
-    return (*_dmobdarg[cvar])[_qp] * _phi[_j][_qp] * (1.0 - _c_i[_qp]) * _grad_u[_qp] * _grad_test[_i][_qp];
-  }
+  // get the coupled variable jvar is referring to
+  const unsigned int cvar = mapJvarToCvar(jvar);
+
+  return (*_dmobdarg[cvar])[_qp] * _phi[_j][_qp] * _grad_w[_qp] * _grad_test[_i][_qp];
 }
-
-#endif // SPLITCHWRESBASE_H

@@ -15,10 +15,10 @@ validParams<GBEvolutionBase>()
 {
   InputParameters params = validParams<Material>();
   params.addClassDescription(
-      "Computes necessary material properties for the isotropic grian growth model");
+      "Computes necessary material properties for the isotropic grain growth model");
   params.addRequiredCoupledVar("T", "Temperature in Kelvin");
   params.addParam<Real>("f0s", 0.125, "The GB energy constant ");
-  params.addRequiredParam<Real>("wGB", "Diffuse GB width in the lengthscale of the model");
+  params.addRequiredParam<Real>("wGB", "Diffuse GB width in the length scale of the model");
   params.addParam<Real>("length_scale", 1.0e-9, "Length scale in m, where default is nm");
   params.addParam<Real>("time_scale", 1.0e-9, "Time scale in s, where default is ns");
   params.addParam<Real>(
@@ -69,14 +69,14 @@ GBEvolutionBase::computeQpProperties()
 {
   const Real length_scale4 = _length_scale * _length_scale * _length_scale * _length_scale;
 
-  // Convert to lengthscale^4/(eV*timescale);
-  Real M0 = _GBmob0 * _time_scale / (_JtoeV * length_scale4);
-
   // GB mobility Derivative
   Real dM_GBdT;
 
   if (_GBMobility < 0)
   {
+    // Convert to lengthscale^4/(eV*timescale);
+    const Real M0 = _GBmob0 * _time_scale / (_JtoeV * length_scale4);
+
     _M_GB[_qp] = M0 * std::exp(-_Q / (_kb * _T[_qp]));
     dM_GBdT = _M_GB[_qp] * _Q / (_kb * _T[_qp] * _T[_qp]);
   }

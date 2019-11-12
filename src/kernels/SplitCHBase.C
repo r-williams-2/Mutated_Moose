@@ -9,10 +9,6 @@
 
 #include "SplitCHBase.h"
 
-/**
- * For single phase, this remains unchanged
- */
-
 template <>
 InputParameters
 validParams<SplitCHBase>()

@@ -7,8 +7,7 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#ifndef KKSACBULKBASE_H
-#define KKSACBULKBASE_H
+#pragma once
 
 #include "ACBulk.h"
 
@@ -47,14 +46,8 @@ protected:
   /// Value of the free energy function \f$ F_a \f$
   const MaterialProperty<Real> & _prop_Fa;
 
-  /// Value of the free energy function \f$ F_b \f$
-  const MaterialProperty<Real> & _prop_Fb;
-
   /// Derivative of the free energy function \f$ \frac d{d\eta} F_a \f$
   const MaterialProperty<Real> & _prop_dFa;
-
-  /// Derivative of the free energy function \f$ \frac d{d\eta} F_b \f$
-  const MaterialProperty<Real> & _prop_dFb;
 
   /// Derivative of the switching function \f$ \frac d{d\eta} h(\eta) \f$
   const MaterialProperty<Real> & _prop_dh;
@@ -65,5 +58,3 @@ protected:
   /// Gradients for all coupled variables
   std::vector<const VariableGradient *> _grad_args;
 };
-
-#endif // KKSACBULKBASE_H

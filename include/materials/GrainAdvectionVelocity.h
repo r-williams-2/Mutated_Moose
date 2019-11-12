@@ -7,8 +7,7 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#ifndef GRAINADVECTIONVELOCITY_H
-#define GRAINADVECTIONVELOCITY_H
+#pragma once
 
 #include "Material.h"
 #include "GrainTrackerInterface.h"
@@ -54,10 +53,9 @@ private:
   const unsigned int _op_num;
 
   /// type of force density material
-  std::string _base_name;
+  const std::string _base_name;
 
   /// Material storing advection velocities of grains
   MaterialProperty<std::vector<RealGradient>> & _velocity_advection;
 };
 
-#endif // GRAINADVECTIONVELOCITY_H

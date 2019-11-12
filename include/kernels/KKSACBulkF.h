@@ -7,8 +7,7 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#ifndef KKSACBULKF_H
-#define KKSACBULKF_H
+#pragma once
 
 #include "KKSACBulkBase.h"
 
@@ -42,6 +41,10 @@ protected:
 
   /// Second derivative of the double well function \f$ \frac {d^2}{d\eta^2} g(\eta) \f$
   const MaterialProperty<Real> & _prop_d2g;
-};
 
-#endif // KKSACBULKF_H
+  /// Value of the free energy function \f$ F_b \f$
+  const MaterialProperty<Real> & _prop_Fb;
+
+  /// Derivative of the free energy function \f$ \frac d{d\eta} F_b \f$
+  const MaterialProperty<Real> & _prop_dFb;
+};

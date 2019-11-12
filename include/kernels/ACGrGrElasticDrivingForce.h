@@ -7,15 +7,18 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#ifndef ACGRGRELASTICDRIVINGFORCE_H
-#define ACGRGRELASTICDRIVINGFORCE_H
+#pragma once
 
 #include "ACBulk.h"
 
 // Forward Declarations
 class ACGrGrElasticDrivingForce;
-class RankTwoTensor;
-class RankFourTensor;
+template <typename>
+class RankTwoTensorTempl;
+typedef RankTwoTensorTempl<Real> RankTwoTensor;
+template <typename>
+class RankFourTensorTempl;
+typedef RankFourTensorTempl<Real> RankFourTensor;
 
 template <>
 InputParameters validParams<ACGrGrElasticDrivingForce>();
@@ -38,4 +41,3 @@ private:
   const MaterialProperty<RankTwoTensor> & _elastic_strain;
 };
 
-#endif // ACGRGRELASTICDRIVINGFORCE_H

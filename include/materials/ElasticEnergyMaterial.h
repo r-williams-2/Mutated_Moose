@@ -7,15 +7,18 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#ifndef ELASTICENERGYMATERIAL_H
-#define ELASTICENERGYMATERIAL_H
+#pragma once
 
 #include "DerivativeFunctionMaterialBase.h"
 
 // Forward Declaration
 class ElasticEnergyMaterial;
-class RankTwoTensor;
-class RankFourTensor;
+template <typename>
+class RankTwoTensorTempl;
+typedef RankTwoTensorTempl<Real> RankTwoTensor;
+template <typename>
+class RankFourTensorTempl;
+typedef RankFourTensorTempl<Real> RankFourTensor;
 
 template <>
 InputParameters validParams<ElasticEnergyMaterial>();
@@ -35,7 +38,7 @@ protected:
   virtual Real computeDF(unsigned int i_var) override;
   virtual Real computeD2F(unsigned int i_var, unsigned int j_var) override;
 
-  std::string _base_name;
+  const std::string _base_name;
 
   /// Stress tensor
   const MaterialProperty<RankTwoTensor> & _stress;
@@ -55,4 +58,3 @@ protected:
   ///@}
 };
 
-#endif // ELASTICENERGYMATERIAL_H

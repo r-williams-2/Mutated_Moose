@@ -18,8 +18,6 @@ validParams<SplitCHParsed>()
   InputParameters params = validParams<SplitCHCRes>();
   params.addClassDescription(
       "Split formulation Cahn-Hilliard Kernel that uses a DerivativeMaterial Free Energy");
-  //params.addRequiredCoupledVar("w", "chem poten");
-  //params.addRequiredCoupledVar("c_j", "coupled concentrations");
   params.addRequiredParam<MaterialPropertyName>(
       "f_name", "Base name of the free energy function F defined in a DerivativeParsedMaterial");
   params.addCoupledVar("args", "Vector of additional arguments to F");
@@ -30,20 +28,15 @@ SplitCHParsed::SplitCHParsed(const InputParameters & parameters)
   : DerivativeMaterialInterface<JvarMapKernelInterface<SplitCHCRes>>(parameters),
     _nvar(_coupled_moose_vars.size()),
     _dFdc(getMaterialPropertyDerivative<Real>("f_name", _var.name())),
-    _d2Fdc2(getMaterialPropertyDerivative<Real>("f_name", _var.name(), _var.name()))//,
-    //_w_var(coupled("w")),
-    //_w(coupledValue("w")),
-    //_c_j_var(coupled("c_j")),
-    //_c_j(coupledValue("c_j"))
+    _d2Fdc2(getMaterialPropertyDerivative<Real>("f_name", _var.name(), _var.name()))
 {
   // reserve space for derivatives
   _d2Fdcdarg.resize(_nvar);
 
   // Iterate over all coupled variables
-  for (unsigned int i = 0; i < _nvar; ++i){
+  for (unsigned int i = 0; i < _nvar; ++i)
     _d2Fdcdarg[i] =
         &getMaterialPropertyDerivative<Real>("f_name", _var.name(), _coupled_moose_vars[i]->name());
-    }
 }
 
 void
@@ -77,22 +70,10 @@ Real
 SplitCHParsed::computeQpOffDiagJacobian(unsigned int jvar)
 {
   if (jvar == _w_var)
-  {
     return SplitCHCRes::computeQpOffDiagJacobian(jvar);
-  }
-  else if (jvar == _c_j_var)
-  {
-    const unsigned int cvar = mapJvarToCvar(jvar);
-    
-    return SplitCHCRes::computeQpOffDiagJacobian(jvar) + (*_d2Fdcdarg[cvar])[_qp] * _phi[_j][_qp] * _test[_i][_qp];
-  }
-  else
-  {
+
   // get the coupled variable jvar is referring to
-  //const unsigned int cvar = mapJvarToCvar(jvar);
-  
-  //return (*_d2Fdcdarg[cvar])[_qp] * _phi[_j][_qp] * _test[_i][_qp];
-  return 0.0;
-  }
-  
+  const unsigned int cvar = mapJvarToCvar(jvar);
+
+  return (*_d2Fdcdarg[cvar])[_qp] * _phi[_j][_qp] * _test[_i][_qp];
 }

@@ -11,6 +11,7 @@
 #include "NonlinearSystemBase.h"
 #include "MooseMesh.h"
 #include "MooseVariable.h"
+#include "TimedPrint.h"
 
 #include "libmesh/dense_matrix.h"
 
@@ -35,9 +36,21 @@ validParams<PolycrystalUserObjectBase>()
                              PolycrystalUserObjectBase::coloringAlgorithms(),
                              PolycrystalUserObjectBase::coloringAlgorithmDescriptions());
 
-  params.registerRelationshipManagers("GrainTrackerHaloRM ElementPointNeighbors",
-                                      "GEOMETRIC ALGEBRAIC");
-  params.addPrivateParam<unsigned short>("element_point_neighbor_layers", 1);
+  // FeatureFloodCount adds a relationship manager, but we need to extend that for PolycrystalIC
+  params.clearRelationshipManagers();
+
+  params.addRelationshipManager(
+      "ElementSideNeighborLayers",
+      Moose::RelationshipManagerType::GEOMETRIC,
+
+      [](const InputParameters & /*obj_params*/, InputParameters & rm_params) {
+        rm_params.set<unsigned short>("layers") = 2;
+      }
+
+  );
+
+  params.addRelationshipManager("ElementSideNeighborLayers",
+                                Moose::RelationshipManagerType::ALGEBRAIC);
 
   // Hide the output of the IC objects by default, it doesn't change over time
   params.set<std::vector<OutputName>>("outputs") = {"none"};
@@ -59,7 +72,9 @@ PolycrystalUserObjectBase::PolycrystalUserObjectBase(const InputParameters & par
     _op_num(_vars.size()),
     _coloring_algorithm(getParam<MooseEnum>("coloring_algorithm")),
     _colors_assigned(false),
-    _output_adjacency_matrix(getParam<bool>("output_adjacency_matrix"))
+    _output_adjacency_matrix(getParam<bool>("output_adjacency_matrix")),
+    _execute_timer(registerTimedSection("execute", 1)),
+    _finalize_timer(registerTimedSection("finalize", 1))
 {
   mooseAssert(_single_map_mode, "Do not turn off single_map_mode with this class");
 }
@@ -106,6 +121,9 @@ PolycrystalUserObjectBase::execute()
   else if (!_fe_problem.hasInitialAdaptivity())
     return;
 
+  TIME_SECTION(_execute_timer);
+  CONSOLE_TIMED_PRINT("Computing Polycrystal Initial Condition");
+
   /**
    * We need one map per grain when creating the initial condition to support overlapping features.
    * Luckily, this is a fairly sparse structure.
@@ -135,7 +153,7 @@ PolycrystalUserObjectBase::execute()
       auto n_nodes = current_elem->n_vertices();
       for (auto i = decltype(n_nodes)(0); i < n_nodes; ++i)
       {
-        const Node * current_node = current_elem->get_node(i);
+        const Node * current_node = current_elem->node_ptr(i);
 
         while (flood(current_node, invalid_size_t))
           ;
@@ -149,6 +167,9 @@ PolycrystalUserObjectBase::finalize()
 {
   if (_colors_assigned && !_fe_problem.hasInitialAdaptivity())
     return;
+
+  TIME_SECTION(_finalize_timer);
+  CONSOLE_TIMED_PRINT("Finalizing Polycrystal Initial Condition");
 
   // TODO: Possibly retrieve the halo thickness from the active GrainTracker object?
   constexpr unsigned int halo_thickness = 2;
@@ -308,7 +329,7 @@ PolycrystalUserObjectBase::isNewFeatureOrConnectedRegion(const DofObject * dof_o
          * Retrieve only the active neighbors for each side of this element, append them to the list
          * of active neighbors
          */
-        neighbor_ancestor = elem->neighbor(i);
+        neighbor_ancestor = elem->neighbor_ptr(i);
         if (neighbor_ancestor)
           neighbor_ancestor->active_family_tree_by_neighbor(all_active_neighbors, elem, false);
         else // if (expand_halos_only /*&& feature->_periodic_nodes.empty()*/)
@@ -359,7 +380,11 @@ bool
 PolycrystalUserObjectBase::areFeaturesMergeable(const FeatureData & f1,
                                                 const FeatureData & f2) const
 {
-  return _colors_assigned ? f1.mergeable(f2) : f1._id == f2._id;
+  if (f1._id != f2._id)
+    return false;
+
+  mooseAssert(f1._var_index == f2._var_index, "Feature should be mergeable but aren't");
+  return true;
 }
 
 void

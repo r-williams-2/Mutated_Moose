@@ -7,12 +7,13 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#ifndef EBSDACCESSFUNCTORS_H
-#define EBSDACCESSFUNCTORS_H
+#pragma once
 
 #include "MooseObject.h"
 #include "MooseEnum.h"
 #include "EulerAngles.h"
+
+#include "libmesh/point.h"
 
 /**
  * Mix-in class that adds so called access functors to select a field from
@@ -164,4 +165,3 @@ public:
   };
 };
 
-#endif // EBSDACCESSFUNCTORS_H

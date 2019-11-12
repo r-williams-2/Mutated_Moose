@@ -7,8 +7,7 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#ifndef FORCEDENSITYMATERIAL_H
-#define FORCEDENSITYMATERIAL_H
+#pragma once
 
 #include "Material.h"
 #include "DerivativeMaterialInterface.h"
@@ -51,7 +50,7 @@ private:
   std::vector<RealGradient> _sum_grad_etas;
 
   /// type of force density material
-  std::string _base_name;
+  const std::string _base_name;
 
   /// force density material
   MaterialProperty<std::vector<RealGradient>> & _dF;
@@ -61,4 +60,3 @@ private:
   std::vector<MaterialProperty<std::vector<Real>> *> _dFdgradeta;
 };
 
-#endif // FORCEDENSITYMATERIAL_H

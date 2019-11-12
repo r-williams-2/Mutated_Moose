@@ -7,8 +7,7 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#ifndef KKSPHASECHEMICALPOTENTIAL_H
-#define KKSPHASECHEMICALPOTENTIAL_H
+#pragma once
 
 #include "Kernel.h"
 #include "JvarMapInterface.h"
@@ -58,6 +57,9 @@ private:
 
   std::vector<const MaterialProperty<Real> *> _d2fadcadarg;
   std::vector<const MaterialProperty<Real> *> _d2fbdcbdarg;
-};
 
-#endif // KKSPHASECHEMICALPOTENTIAL_H
+  ///@{ site fractions
+  const Real _ka;
+  const Real _kb;
+  ///@}
+};

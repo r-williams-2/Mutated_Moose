@@ -7,14 +7,18 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#ifndef ACINTERFACESTRESS_H
-#define ACINTERFACESTRESS_H
+#pragma once
 
 #include "Kernel.h"
-#include "RankThreeTensor.h"
 
 class ACInterfaceStress;
-class RankTwoTensor;
+template <typename>
+class RankTwoTensorTempl;
+typedef RankTwoTensorTempl<Real> RankTwoTensor;
+
+template <typename>
+class RankThreeTensorTempl;
+typedef RankThreeTensorTempl<Real> RankThreeTensor;
 
 template <>
 InputParameters validParams<ACInterfaceStress>();
@@ -37,7 +41,7 @@ protected:
   const MaterialProperty<Real> & _L;
 
   ///@{ Strain base name and property
-  std::string _base_name;
+  const std::string _base_name;
   const MaterialProperty<RankTwoTensor> & _strain;
   ///@}
 
@@ -51,4 +55,3 @@ protected:
   RankThreeTensor _ddS;
 };
 
-#endif // ACINTERFACESTRESS_H

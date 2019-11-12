@@ -17,6 +17,7 @@
 #include "Assembly.h"
 #include "FEProblem.h"
 #include "NonlinearSystem.h"
+#include "TimedPrint.h"
 
 #include "libmesh/dof_map.h"
 #include "libmesh/mesh_tools.h"
@@ -47,12 +48,12 @@ dataStore(std::ostream & stream, FeatureFloodCount::FeatureData & feature, void 
   storeHelper(stream, feature._vol_count, context);
   storeHelper(stream, feature._centroid, context);
   storeHelper(stream, feature._status, context);
-  storeHelper(stream, feature._intersects_boundary, context);
+  storeHelper(stream, feature._boundary_intersection, context);
 }
 
 template <>
 void
-dataStore(std::ostream & stream, MeshTools::BoundingBox & bbox, void * context)
+dataStore(std::ostream & stream, BoundingBox & bbox, void * context)
 {
   storeHelper(stream, bbox.min(), context);
   storeHelper(stream, bbox.max(), context);
@@ -78,20 +79,20 @@ dataLoad(std::istream & stream, FeatureFloodCount::FeatureData & feature, void *
   loadHelper(stream, feature._vol_count, context);
   loadHelper(stream, feature._centroid, context);
   loadHelper(stream, feature._status, context);
-  loadHelper(stream, feature._intersects_boundary, context);
+  loadHelper(stream, feature._boundary_intersection, context);
 }
 
 template <>
 void
-dataLoad(std::istream & stream, MeshTools::BoundingBox & bbox, void * context)
+dataLoad(std::istream & stream, BoundingBox & bbox, void * context)
 {
   loadHelper(stream, bbox.min(), context);
   loadHelper(stream, bbox.max(), context);
 }
 
 // Utility routines
-void updateBBoxExtremesHelper(MeshTools::BoundingBox & bbox, const Point & node);
-void updateBBoxExtremesHelper(MeshTools::BoundingBox & bbox, const Elem & elem);
+void updateBBoxExtremesHelper(BoundingBox & bbox, const Point & node);
+void updateBBoxExtremesHelper(BoundingBox & bbox, const Elem & elem);
 bool areElemListsMergeable(const std::list<dof_id_type> & elem_list1,
                            const std::list<dof_id_type> & elem_list2,
                            MeshBase & mesh);
@@ -142,6 +143,19 @@ validParams<FeatureFloodCount>()
       true,
       "Controls whether features are defined to be less than or greater than the threshold value.");
 
+  params.addParam<std::vector<BoundaryName>>(
+      "primary_percolation_boundaries",
+      "A list of boundaries used in conjunction with the corresponding "
+      "\"secondary_percolation_boundaries\" parameter for determining if a feature creates a path "
+      "connecting any pair of boundaries");
+  params.addParam<std::vector<BoundaryName>>(
+      "secondary_percolation_boundaries",
+      "Paired boundaries with \"primaryary_percolation_boundaries\" parameter");
+  params.addParam<std::vector<BoundaryName>>(
+      "specified_boundaries",
+      "An optional list of boundaries; if supplied, each feature is checked to determine whether "
+      "it intersects any of the specified boundaries in this list.");
+
   /**
    * The FeatureFloodCount and derived objects should not to operate on the displaced mesh. These
    * objects consume variable values from the nonlinear system and use a lot of raw geometric
@@ -153,10 +167,13 @@ validParams<FeatureFloodCount>()
 
   // The FeatureFloodCount object does not require that any state (restartable information) is
   // maintained. This Boolean is set to false so that we don't ask MOOSE to save a potentially
-  // large data structure for no reason.
+  // large data structure for no reason. It is set for true in at least one derived class
+  // (GrainTracker).
   params.addPrivateParam<bool>("restartable_required", false);
 
-  params.addParamNamesToGroup("use_single_map condense_map_info use_global_numbering", "Advanced");
+  params.addParamNamesToGroup(
+      "use_single_map condense_map_info use_global_numbering primary_percolation_boundaries",
+      "Advanced");
 
   MooseEnum flood_type("NODAL ELEMENTAL", "ELEMENTAL");
   params.addParam<MooseEnum>("flood_entity_type",
@@ -166,6 +183,11 @@ validParams<FeatureFloodCount>()
   params.addClassDescription("The object is able to find and count \"connected components\" in any "
                              "solution field or number of solution fields. A primary example would "
                              "be to count \"bubbles\".");
+
+  params.addRelationshipManager("ElementSideNeighborLayers",
+                                Moose::RelationshipManagerType::GEOMETRIC |
+                                    Moose::RelationshipManagerType::ALGEBRAIC);
+
   return params;
 }
 
@@ -223,9 +245,33 @@ FeatureFloodCount::FeatureFloodCount(const InputParameters & parameters)
   addMooseVariableDependency(_fe_vars);
 
   _is_boundary_restricted = boundaryRestricted();
-}
 
-FeatureFloodCount::~FeatureFloodCount() {}
+  if (_subproblem.isTransient())
+  {
+    // tell MOOSE that we are going to need old and older DoF values
+    for (auto & var : _vars)
+    {
+      var->dofValuesOld();
+      var->dofValuesOlder();
+    }
+  }
+
+  if (parameters.isParamValid("primary_percolation_boundaries"))
+    _primary_perc_bnds = _mesh.getBoundaryIDs(
+        parameters.get<std::vector<BoundaryName>>("primary_percolation_boundaries"));
+  if (parameters.isParamValid("secondary_percolation_boundaries"))
+    _secondary_perc_bnds = _mesh.getBoundaryIDs(
+        parameters.get<std::vector<BoundaryName>>("secondary_percolation_boundaries"));
+
+  if (_primary_perc_bnds.empty() != _secondary_perc_bnds.empty())
+    paramError("primary_percolation_boundaries",
+               "primary_percolation_boundaries and secondary_percolation_boundaries must both be "
+               "supplied when checking for percolation");
+
+  if (parameters.isParamValid("specified_boundaries"))
+    _specified_bnds =
+        _mesh.getBoundaryIDs(parameters.get<std::vector<BoundaryName>>("specified_boundaries"));
+}
 
 void
 FeatureFloodCount::initialSetup()
@@ -252,7 +298,7 @@ void
 FeatureFloodCount::initialize()
 {
   // Clear the feature marking maps and region counters and other data structures
-  for (auto map_num = decltype(_maps_size)(0); map_num < _maps_size; ++map_num)
+  for (MooseIndex(_maps_size) map_num = 0; map_num < _maps_size; ++map_num)
   {
     _feature_maps[map_num].clear();
     _partial_feature_sets[map_num].clear();
@@ -312,6 +358,7 @@ void
 FeatureFloodCount::execute()
 {
   TIME_SECTION(_execute_timer);
+  CONSOLE_TIMED_PRINT("Flooding Features");
 
   // Iterate only over boundaries if restricted
   if (_is_boundary_restricted)
@@ -331,7 +378,7 @@ FeatureFloodCount::execute()
       if (elem->processor_id() == rank)
       {
         if (hasBoundary(boundary_id))
-          for (auto var_num = beginIndex(_vars); var_num < _vars.size(); ++var_num)
+          for (MooseIndex(_vars) var_num = 0; var_num < _vars.size(); ++var_num)
             flood(elem, var_num);
       }
     }
@@ -343,17 +390,17 @@ FeatureFloodCount::execute()
       // Loop over elements or nodes
       if (_is_elemental)
       {
-        for (auto var_num = beginIndex(_vars); var_num < _vars.size(); ++var_num)
+        for (MooseIndex(_vars) var_num = 0; var_num < _vars.size(); ++var_num)
           flood(current_elem, var_num);
       }
       else
       {
         auto n_nodes = current_elem->n_vertices();
-        for (auto i = decltype(n_nodes)(0); i < n_nodes; ++i)
+        for (MooseIndex(n_nodes) i = 0; i < n_nodes; ++i)
         {
-          const Node * current_node = current_elem->get_node(i);
+          const Node * current_node = current_elem->node_ptr(i);
 
-          for (auto var_num = beginIndex(_vars); var_num < _vars.size(); ++var_num)
+          for (MooseIndex(_vars) var_num = 0; var_num < _vars.size(); ++var_num)
             flood(current_node, var_num);
         }
       }
@@ -400,7 +447,7 @@ FeatureFloodCount::communicateAndMerge()
     if (is_merging_processor)
       recv_buffers.reserve(_app.n_processors());
 
-    for (auto i = decltype(_n_vars)(0); i < _n_vars; ++i)
+    for (MooseIndex(_n_vars) i = 0; i < _n_vars; ++i)
     {
       serialize(send_buffers[0], i);
 
@@ -541,7 +588,7 @@ FeatureFloodCount::sortAndLabel()
    * with each feature's _var_index.
    */
   unsigned int feature_offset = 0;
-  for (auto map_num = beginIndex(_feature_counts_per_map); map_num < _maps_size; ++map_num)
+  for (MooseIndex(_maps_size) map_num = 0; map_num < _maps_size; ++map_num)
   {
     // Skip empty map checks
     if (_feature_counts_per_map[map_num] == 0)
@@ -563,7 +610,7 @@ FeatureFloodCount::sortAndLabel()
 #endif
 
   // Label the features with an ID based on the sorting (processor number independent value)
-  for (auto i = beginIndex(_feature_sets); i < _feature_sets.size(); ++i)
+  for (MooseIndex(_feature_sets) i = 0; i < _feature_sets.size(); ++i)
     if (_feature_sets[i]._id == invalid_id)
       _feature_sets[i]._id = i;
 }
@@ -588,7 +635,7 @@ FeatureFloodCount::buildLocalToGlobalIndices(std::vector<std::size_t> & local_to
   // Build the offsets vector
   unsigned int globalsize = 0;
   std::vector<int> offsets(_n_procs); // Type is signed for use with the MPI API
-  for (auto i = beginIndex(offsets); i < offsets.size(); ++i)
+  for (MooseIndex(offsets) i = 0; i < offsets.size(); ++i)
   {
     offsets[i] = globalsize;
     globalsize += counts[i];
@@ -618,7 +665,7 @@ void
 FeatureFloodCount::buildFeatureIdToLocalIndices(unsigned int max_id)
 {
   _feature_id_to_local_index.assign(max_id + 1, invalid_size_t);
-  for (auto feature_index = beginIndex(_feature_sets); feature_index < _feature_sets.size();
+  for (MooseIndex(_feature_sets) feature_index = 0; feature_index < _feature_sets.size();
        ++feature_index)
   {
     if (_feature_sets[feature_index]._status != Status::INACTIVE)
@@ -634,6 +681,7 @@ void
 FeatureFloodCount::finalize()
 {
   TIME_SECTION(_finalize_timer);
+  CONSOLE_TIMED_PRINT("Finalizing Feature Identification");
 
   // Gather all information on processor zero and merge
   communicateAndMerge();
@@ -791,8 +839,58 @@ FeatureFloodCount::doesFeatureIntersectBoundary(unsigned int feature_id) const
   {
     mooseAssert(local_index < _feature_sets.size(), "local_index out of bounds");
     return _feature_sets[local_index]._status != Status::INACTIVE
-               ? _feature_sets[local_index]._intersects_boundary
-               : invalid_id;
+               ? _feature_sets[local_index]._boundary_intersection != BoundaryIntersection::NONE
+               : false;
+  }
+
+  return false;
+}
+
+bool
+FeatureFloodCount::doesFeatureIntersectSpecifiedBoundary(unsigned int feature_id) const
+{
+  // TODO: This information is not parallel consistent when using FeatureFloodCounter
+
+  // Some processors don't contain the largest feature id, in that case we just return invalid_id
+  if (feature_id >= _feature_id_to_local_index.size())
+    return false;
+
+  auto local_index = _feature_id_to_local_index[feature_id];
+
+  if (local_index != invalid_size_t)
+  {
+    mooseAssert(local_index < _feature_sets.size(), "local_index out of bounds");
+    return _feature_sets[local_index]._status != Status::INACTIVE
+               ? ((_feature_sets[local_index]._boundary_intersection &
+                   BoundaryIntersection::SPECIFIED_BOUNDARY) ==
+                  BoundaryIntersection::SPECIFIED_BOUNDARY)
+               : false;
+  }
+
+  return false;
+}
+
+bool
+FeatureFloodCount::isFeaturePercolated(unsigned int feature_id) const
+{
+  // TODO: This information is not parallel consistent when using FeatureFloodCounter
+
+  // Some processors don't contain the largest feature id, in that case we just return invalid_id
+  if (feature_id >= _feature_id_to_local_index.size())
+    return false;
+
+  auto local_index = _feature_id_to_local_index[feature_id];
+
+  if (local_index != invalid_size_t)
+  {
+    mooseAssert(local_index < _feature_sets.size(), "local_index out of bounds");
+    bool primary = ((_feature_sets[local_index]._boundary_intersection &
+                     BoundaryIntersection::PRIMARY_PERCOLATION_BOUNDARY) ==
+                    BoundaryIntersection::PRIMARY_PERCOLATION_BOUNDARY);
+    bool secondary = ((_feature_sets[local_index]._boundary_intersection &
+                       BoundaryIntersection::SECONDARY_PERCOLATION_BOUNDARY) ==
+                      BoundaryIntersection::SECONDARY_PERCOLATION_BOUNDARY);
+    return _feature_sets[local_index]._status != Status::INACTIVE ? (primary && secondary) : false;
   }
 
   return false;
@@ -928,6 +1026,9 @@ FeatureFloodCount::prepareDataForTransfer()
   {
     for (auto & feature : list_ref)
     {
+      // See if the feature intersects a boundary or perhaps one of the percolation boundaries.
+      updateBoundaryIntersections(feature);
+
       // Periodic node ids
       appendPeriodicNeighborNodes(feature);
 
@@ -948,7 +1049,7 @@ FeatureFloodCount::prepareDataForTransfer()
       else
       {
         for (auto & halo_id : feature._halo_ids)
-          updateBBoxExtremesHelper(feature._bboxes[0], mesh.node(halo_id));
+          updateBBoxExtremesHelper(feature._bboxes[0], mesh.point(halo_id));
       }
 
       mooseAssert(!feature._local_ids.empty(), "local entity ids cannot be empty");
@@ -989,8 +1090,7 @@ FeatureFloodCount::deserialize(std::vector<std::string> & serialized_buffers, un
 
   auto rank = processor_id();
 
-  for (auto proc_id = beginIndex(serialized_buffers); proc_id < serialized_buffers.size();
-       ++proc_id)
+  for (MooseIndex(serialized_buffers) proc_id = 0; proc_id < serialized_buffers.size(); ++proc_id)
   {
     /**
      * Usually we have the local processor data already in the _partial_feature_sets data structure.
@@ -1023,7 +1123,7 @@ FeatureFloodCount::mergeSets()
   TIME_SECTION(_merge_timer);
 
   // When working with _distribute_merge_work all of the maps will be empty except for one
-  for (auto map_num = decltype(_maps_size)(0); map_num < _maps_size; ++map_num)
+  for (MooseIndex(_maps_size) map_num = 0; map_num < _maps_size; ++map_num)
   {
     for (auto it1 = _partial_feature_sets[map_num].begin();
          it1 != _partial_feature_sets[map_num].end();
@@ -1091,7 +1191,7 @@ FeatureFloodCount::consolidateMergedFeatures(std::vector<std::list<FeatureData>>
   // Set the member feature count to zero and start counting the actual features
   _feature_count = 0;
 
-  for (auto map_num = decltype(_maps_size)(0); map_num < _maps_size; ++map_num)
+  for (MooseIndex(_maps_size) map_num = 0; map_num < _maps_size; ++map_num)
   {
     for (auto & feature : _partial_feature_sets[map_num])
     {
@@ -1148,7 +1248,7 @@ FeatureFloodCount::areFeaturesMergeable(const FeatureData & f1, const FeatureDat
 void
 FeatureFloodCount::updateFieldInfo()
 {
-  for (auto i = beginIndex(_feature_sets); i < _feature_sets.size(); ++i)
+  for (MooseIndex(_feature_sets) i = 0; i < _feature_sets.size(); ++i)
   {
     auto & feature = _feature_sets[i];
 
@@ -1207,6 +1307,7 @@ FeatureFloodCount::flood(const DofObject * dof_object, std::size_t current_index
   while (!_entity_queue.empty())
   {
     const DofObject * curr_dof_object = _entity_queue.back();
+    const Elem * elem = _is_elemental ? static_cast<const Elem *>(curr_dof_object) : nullptr;
     _entity_queue.pop_back();
 
     // Retrieve the id of the current entity
@@ -1218,18 +1319,18 @@ FeatureFloodCount::flood(const DofObject * dof_object, std::size_t current_index
       continue;
 
     // Are we outside of the range we should be working in?
-    if (_is_elemental)
-    {
-      const Elem & elem = static_cast<const Elem &>(*curr_dof_object);
-
-      if (!_dof_map.is_evaluable(elem))
-        continue;
-    }
+    if (_is_elemental && !_dof_map.is_evaluable(*elem))
+      continue;
 
     // See if the current entity either starts a new feature or continues an existing feature
     auto new_id = invalid_id; // Writable reference to hold an optional id;
     Status status =
         Status::INACTIVE; // Status is inactive until we find an entity above the starting threshold
+
+    // Make sure that the Assembly object has the right element and subdomain information set
+    // since we are moving through the mesh in a manual fashion.
+    if (_is_elemental)
+      _fe_problem.setCurrentSubdomainID(elem, 0);
 
     if (!isNewFeatureOrConnectedRegion(curr_dof_object, current_index, feature, status, new_id))
     {
@@ -1278,21 +1379,19 @@ FeatureFloodCount::flood(const DofObject * dof_object, std::size_t current_index
      */
     if (_is_elemental && processor_id() == curr_dof_object->processor_id())
     {
-      const Elem * elem = static_cast<const Elem *>(curr_dof_object);
-
       // Keep track of how many elements participate in the centroid averaging
       feature->_vol_count++;
 
       // Sum the centroid values for now, we'll average them later
       feature->_centroid += elem->centroid();
 
-      // Does the volume intersect the boundary?
-      if (_all_boundary_entity_ids.find(elem->id()) != _all_boundary_entity_ids.end())
-        feature->_intersects_boundary = true;
+      //      // Does the volume intersect the boundary?
+      //      if (_all_boundary_entity_ids.find(elem->id()) != _all_boundary_entity_ids.end())
+      //        feature->_intersects_boundary = true;
     }
 
     if (_is_elemental)
-      visitElementalNeighbors(static_cast<const Elem *>(curr_dof_object),
+      visitElementalNeighbors(elem,
                               feature,
                               /*expand_halos_only =*/false,
                               /*disjoint_only =*/false);
@@ -1388,9 +1487,9 @@ FeatureFloodCount::expandPointHalos()
 
         // Get the nodes on a current element so that we can add in point neighbors
         auto n_nodes = elem->n_vertices();
-        for (auto i = decltype(n_nodes)(0); i < n_nodes; ++i)
+        for (MooseIndex(n_nodes) i = 0; i < n_nodes; ++i)
         {
-          const Node * current_node = elem->get_node(i);
+          const Node * current_node = elem->node_ptr(i);
 
           auto elem_vector_it = node_to_elem_map.find(current_node->id());
           if (elem_vector_it == node_to_elem_map.end())
@@ -1436,7 +1535,7 @@ FeatureFloodCount::expandEdgeHalos(unsigned int num_layers_to_expand)
   {
     for (auto & feature : list_ref)
     {
-      for (auto halo_level = decltype(num_layers_to_expand)(0); halo_level < num_layers_to_expand;
+      for (MooseIndex(num_layers_to_expand) halo_level = 0; halo_level < num_layers_to_expand;
            ++halo_level)
       {
         /**
@@ -1493,7 +1592,7 @@ FeatureFloodCount::visitElementalNeighbors(const Elem * elem,
   MeshBase & mesh = _mesh.getMesh();
 
   // Loop over all neighbors (at the the same level as the current element)
-  for (auto i = decltype(elem->n_neighbors())(0); i < elem->n_neighbors(); ++i)
+  for (MooseIndex(elem->n_neighbors()) i = 0; i < elem->n_neighbors(); ++i)
   {
     const Elem * neighbor_ancestor = nullptr;
     bool topological_neighbor = false;
@@ -1502,7 +1601,7 @@ FeatureFloodCount::visitElementalNeighbors(const Elem * elem,
      * Retrieve only the active neighbors for each side of this element, append them to the list
      * of active neighbors
      */
-    neighbor_ancestor = elem->neighbor(i);
+    neighbor_ancestor = elem->neighbor_ptr(i);
     if (neighbor_ancestor)
     {
       if (neighbor_ancestor == libMesh::remote_elem)
@@ -1622,6 +1721,53 @@ FeatureFloodCount::visitNeighborsHelper(const T * curr_entity,
 }
 
 void
+FeatureFloodCount::updateBoundaryIntersections(FeatureData & feature) const
+{
+  if (_is_elemental)
+  {
+    for (auto entity : feature._local_ids)
+    {
+      // See if this feature is on a boundary if we haven't already figured that out
+      if ((feature._boundary_intersection & BoundaryIntersection::ANY_BOUNDARY) ==
+          BoundaryIntersection::NONE)
+      {
+        Elem * elem = _mesh.elemPtr(entity);
+        if (elem && elem->on_boundary())
+          feature._boundary_intersection |= BoundaryIntersection::ANY_BOUNDARY;
+      }
+
+      // Now see if the feature touches the primary and/or secondary boundary IDs if we haven't
+      // figured that out already
+      if ((feature._boundary_intersection & BoundaryIntersection::PRIMARY_PERCOLATION_BOUNDARY) ==
+          BoundaryIntersection::NONE)
+      {
+        for (auto primary_id : _primary_perc_bnds)
+          if (_mesh.isBoundaryElem(entity, primary_id))
+            feature._boundary_intersection |= BoundaryIntersection::PRIMARY_PERCOLATION_BOUNDARY;
+      }
+
+      if ((feature._boundary_intersection & BoundaryIntersection::SECONDARY_PERCOLATION_BOUNDARY) ==
+          BoundaryIntersection::NONE)
+      {
+        for (auto secondary_id : _secondary_perc_bnds)
+          if (_mesh.isBoundaryElem(entity, secondary_id))
+            feature._boundary_intersection |= BoundaryIntersection::SECONDARY_PERCOLATION_BOUNDARY;
+      }
+
+      // See if the feature contacts any of the user-specified boundaries if we haven't
+      // done so already
+      if ((feature._boundary_intersection & BoundaryIntersection::SPECIFIED_BOUNDARY) ==
+          BoundaryIntersection::NONE)
+      {
+        for (auto specified_id : _specified_bnds)
+          if (_mesh.isBoundaryElem(entity, specified_id))
+            feature._boundary_intersection |= BoundaryIntersection::SPECIFIED_BOUNDARY;
+      }
+    }
+  }
+}
+
+void
 FeatureFloodCount::appendPeriodicNeighborNodes(FeatureData & feature) const
 {
   if (_is_elemental)
@@ -1630,9 +1776,9 @@ FeatureFloodCount::appendPeriodicNeighborNodes(FeatureData & feature) const
     {
       Elem * elem = _mesh.elemPtr(entity);
 
-      for (auto node_n = decltype(elem->n_nodes())(0); node_n < elem->n_nodes(); ++node_n)
+      for (MooseIndex(elem->n_nodes()) node_n = 0; node_n < elem->n_nodes(); ++node_n)
       {
-        auto iters = _periodic_node_map.equal_range(elem->node(node_n));
+        auto iters = _periodic_node_map.equal_range(elem->node_id(node_n));
 
         for (auto it = iters.first; it != iters.second; ++it)
         {
@@ -1679,9 +1825,9 @@ FeatureFloodCount::FeatureData::updateBBoxExtremes(MeshBase & mesh)
 {
   // First update the primary bounding box (all topologically connected)
   for (auto & halo_id : _halo_ids)
-    updateBBoxExtremesHelper(_bboxes[0], *mesh.elem(halo_id));
+    updateBBoxExtremesHelper(_bboxes[0], mesh.elem_ref(halo_id));
   for (auto & ghost_id : _ghosted_ids)
-    updateBBoxExtremesHelper(_bboxes[0], *mesh.elem(ghost_id));
+    updateBBoxExtremesHelper(_bboxes[0], mesh.elem_ref(ghost_id));
 
   // Remove all of the IDs that are in the primary region
   std::list<dof_id_type> disjoint_elem_id_list;
@@ -1759,8 +1905,7 @@ FeatureFloodCount::FeatureData::updateBBoxExtremes(MeshBase & mesh)
 }
 
 void
-FeatureFloodCount::FeatureData::updateBBoxExtremes(MeshTools::BoundingBox & bbox,
-                                                   const MeshTools::BoundingBox & rhs_bbox)
+FeatureFloodCount::FeatureData::updateBBoxExtremes(BoundingBox & bbox, const BoundingBox & rhs_bbox)
 {
   for (unsigned int i = 0; i < LIBMESH_DIM; ++i)
   {
@@ -1913,7 +2058,7 @@ FeatureFloodCount::FeatureData::merge(FeatureData && rhs)
   _status &= rhs._status;
 
   // Logical OR here to make sure we maintain boundary intersection attribute when joining
-  _intersects_boundary |= rhs._intersects_boundary;
+  _boundary_intersection |= rhs._boundary_intersection;
 
   _vol_count += rhs._vol_count;
   _centroid += rhs._centroid;
@@ -1957,7 +2102,7 @@ FeatureFloodCount::FeatureData::expandBBox(const FeatureData & rhs)
 
   auto box_expanded = false;
   for (auto & bbox : _bboxes)
-    for (auto j = beginIndex(rhs._bboxes); j < rhs._bboxes.size(); ++j)
+    for (MooseIndex(rhs._bboxes) j = 0; j < rhs._bboxes.size(); ++j)
     {
       if (bbox.intersects(rhs._bboxes[j], libMesh::TOLERANCE * libMesh::TOLERANCE))
       {
@@ -1972,11 +2117,11 @@ FeatureFloodCount::FeatureData::expandBBox(const FeatureData & rhs)
   {
     std::ostringstream oss;
     oss << "LHS BBoxes:\n";
-    for (auto i = beginIndex(_bboxes); i < _bboxes.size(); ++i)
+    for (MooseIndex(_bboxes) i = 0; i < _bboxes.size(); ++i)
       oss << "Max: " << _bboxes[i].max() << " Min: " << _bboxes[i].min() << '\n';
 
     oss << "RHS BBoxes:\n";
-    for (auto i = beginIndex(rhs._bboxes); i < rhs._bboxes.size(); ++i)
+    for (MooseIndex(rhs._bboxes) i = 0; i < rhs._bboxes.size(); ++i)
       oss << "Max: " << rhs._bboxes[i].max() << " Min: " << rhs._bboxes[i].min() << '\n';
 
     ::mooseError("No Bounding Boxes Expanded - This is a catastrophic error!\n", oss.str());
@@ -1984,7 +2129,7 @@ FeatureFloodCount::FeatureData::expandBBox(const FeatureData & rhs)
 
   // Any bounding box in the rhs vector that doesn't intersect
   // needs to be appended to the lhs vector
-  for (auto j = beginIndex(intersected_boxes); j < intersected_boxes.size(); ++j)
+  for (MooseIndex(intersected_boxes) j = 0; j < intersected_boxes.size(); ++j)
     if (!intersected_boxes[j])
       _bboxes.push_back(rhs._bboxes[j]);
 }
@@ -2058,7 +2203,7 @@ operator<<(std::ostream & out, const FeatureFloodCount::FeatureData & feature)
  *****************************************************************************************
  */
 void
-updateBBoxExtremesHelper(MeshTools::BoundingBox & bbox, const Point & node)
+updateBBoxExtremesHelper(BoundingBox & bbox, const Point & node)
 {
   for (unsigned int i = 0; i < LIBMESH_DIM; ++i)
   {
@@ -2068,10 +2213,10 @@ updateBBoxExtremesHelper(MeshTools::BoundingBox & bbox, const Point & node)
 }
 
 void
-updateBBoxExtremesHelper(MeshTools::BoundingBox & bbox, const Elem & elem)
+updateBBoxExtremesHelper(BoundingBox & bbox, const Elem & elem)
 {
-  for (auto node_n = decltype(elem.n_nodes())(0); node_n < elem.n_nodes(); ++node_n)
-    updateBBoxExtremesHelper(bbox, *(elem.get_node(node_n)));
+  for (MooseIndex(elem.n_nodes()) node_n = 0; node_n < elem.n_nodes(); ++node_n)
+    updateBBoxExtremesHelper(bbox, *(elem.node_ptr(node_n)));
 }
 
 bool

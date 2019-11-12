@@ -7,8 +7,7 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#ifndef GRAINGROWTHACTION_H
-#define GRAINGROWTHACTION_H
+#pragma once
 
 // MOOSE includes
 #include "Action.h"
@@ -29,12 +28,17 @@ public:
   virtual void act();
 
 protected:
+  void addKernel(const std::string & kernel_type,
+                 const std::string & kernel_name,
+                 InputParameters params);
+
   /// number of variables and variable name base for variable creation
   const unsigned int _op_num;
   const std::string _var_name_base;
 
   /// FEType for the variable being created
   const FEType _fe_type;
-};
 
-#endif // GRAINGROWTHACTION_H
+  /// use AD objects where possible
+  const bool _use_ad;
+};

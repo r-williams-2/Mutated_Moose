@@ -94,8 +94,14 @@ ConservedAction::act()
   //
   if (_current_task == "add_variable")
   {
+    auto type = AddVariableAction::determineType(_fe_type, 1);
+    auto var_params = _factory.getValidParams(type);
+    var_params.set<MooseEnum>("family") = Moose::stringify(_fe_type.family);
+    var_params.set<MooseEnum>("order") = _fe_type.order.get_order();
+    var_params.set<std::vector<Real>>("scaling") = {_scaling};
+
     // Create conserved variable _var_name
-    _problem->addVariable(_var_name, _fe_type, _scaling);
+    _problem->addVariable(type, _var_name, var_params);
 
     // Create chemical potential variable for split form
     switch (_solve_type)
@@ -104,7 +110,7 @@ ConservedAction::act()
         break;
       case SolveType::REVERSE_SPLIT:
       case SolveType::FORWARD_SPLIT:
-        _problem->addVariable(_chempot_name, _fe_type, _scaling);
+        _problem->addVariable(type, _chempot_name, var_params);
     }
   }
 
@@ -222,8 +228,9 @@ ConservedAction::act()
           std::string kernel_name = _var_name + "_" + kernel_type;
           InputParameters params = _factory.getValidParams(kernel_type);
           params.set<NonlinearVariableName>("variable") = _var_name;
-          params.set<std::vector<VariableName>>("conc") = {_chempot_name};
-          params.set<MaterialPropertyName>("D_name") = getParam<MaterialPropertyName>("mobility");
+          params.set<std::vector<VariableName>>("v") = {_chempot_name};
+          params.set<MaterialPropertyName>("diffusivity") =
+              getParam<MaterialPropertyName>("mobility");
           params.applyParameters(parameters());
 
           _problem->addKernel(kernel_type, kernel_name, params);
@@ -235,8 +242,8 @@ ConservedAction::act()
           std::string kernel_name = _chempot_name + "_" + kernel_type;
           InputParameters params = _factory.getValidParams(kernel_type);
           params.set<NonlinearVariableName>("variable") = _chempot_name;
-          params.set<std::vector<VariableName>>("conc") = {_var_name};
-          params.set<MaterialPropertyName>("D_name") = getParam<MaterialPropertyName>("kappa");
+          params.set<std::vector<VariableName>>("v") = {_var_name};
+          params.set<MaterialPropertyName>("diffusivity") = getParam<MaterialPropertyName>("kappa");
           params.applyParameters(parameters());
 
           _problem->addKernel(kernel_type, kernel_name, params);
