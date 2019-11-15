@@ -15,23 +15,17 @@ validParams<SplitCHCRes>()
 {
   InputParameters params = validParams<SplitCHBase>();
   params.addClassDescription("Split formulation Cahn-Hilliard Kernel");
-<<<<<<< HEAD
   params.addRequiredCoupledVar("w", "chem potential"); // Syntax for coupled variable for split CH (i.e. the variational derivative)
   params.addRequiredCoupledVar("c_j", "coupled concentrations"); // Syntax for coupled concentration to allow the calculation of the coupled gradients.
   //params.addRequiredCoupledVar("w", "Chemical potential");
   params.addRequiredParam<MaterialPropertyName>("kappa_name", "The kappa used with the kernel");
   params.addRequiredParam<MaterialPropertyName>("mols_in_sys", "The total number of mols in the system"); // Get the material property named mols_in_sys.
-=======
-  params.addRequiredCoupledVar("w", "Chemical potential");
-  params.addRequiredParam<MaterialPropertyName>("kappa_name", "The kappa used with the kernel");
->>>>>>> 9021ce4c9f6eea65e79468d95de6f2b5dc7f05a2
   return params;
 }
 
 SplitCHCRes::SplitCHCRes(const InputParameters & parameters)
   : SplitCHBase(parameters),
     _kappa(getMaterialProperty<Real>("kappa_name")),
-<<<<<<< HEAD
     _no_mols(getMaterialProperty<Real>("mols_in_sys")), // Get 
     _w_var(coupled("w")), // Syntax for coupled variable for split CH (i.e. the variational derivative)
     _w(coupledValue("w")), // Syntax for coupled variable for split CH (i.e. the variational derivative)
@@ -40,10 +34,6 @@ SplitCHCRes::SplitCHCRes(const InputParameters & parameters)
     _grad_coupled(coupledGradient("c_j")) // Syntax for gradient of coupled concentrations.
     //_w_var(coupled("w")),
     //_w(coupledValue("w"))
-=======
-    _w_var(coupled("w")),
-    _w(coupledValue("w"))
->>>>>>> 9021ce4c9f6eea65e79468d95de6f2b5dc7f05a2
 {
 }
 
@@ -67,7 +57,6 @@ Real
 SplitCHCRes::computeQpResidual()
 {
   Real residual =
-<<<<<<< HEAD
       SplitCHBase::computeQpResidual(); //(f_prime_zero+e_prime)*_test[_i][_qp] from SplitCHBase. This is the partial derivative term.
 
   residual += -_w[_qp] * _test[_i][_qp]; // This is the coupled variable term.
@@ -85,12 +74,6 @@ SplitCHCRes::computeQpResidual()
 
   //residual += -_w[_qp] * _test[_i][_qp];
   //residual += _kappa[_qp] * _grad_u[_qp] * _grad_test[_i][_qp];
-=======
-      SplitCHBase::computeQpResidual(); //(f_prime_zero+e_prime)*_test[_i][_qp] from SplitCHBase
-
-  residual += -_w[_qp] * _test[_i][_qp];
-  residual += _kappa[_qp] * _grad_u[_qp] * _grad_test[_i][_qp];
->>>>>>> 9021ce4c9f6eea65e79468d95de6f2b5dc7f05a2
 
   return residual;
 }
@@ -101,12 +84,8 @@ SplitCHCRes::computeQpJacobian()
   Real jacobian = SplitCHBase::computeQpJacobian(); //(df_prime_zero_dc+de_prime_dc)*_test[_i][_qp];
                                                     // from SplitCHBase
 
-<<<<<<< HEAD
   jacobian += (1.0 / _no_mols[_qp]) * 0.5 * _kappa[_qp] * _grad_phi[_j][_qp] * _grad_test[_i][_qp];
   //jacobian += _kappa[_qp] * _grad_phi[_j][_qp] * _grad_test[_i][_qp];
-=======
-  jacobian += _kappa[_qp] * _grad_phi[_j][_qp] * _grad_test[_i][_qp];
->>>>>>> 9021ce4c9f6eea65e79468d95de6f2b5dc7f05a2
 
   return jacobian;
 }
@@ -118,7 +97,6 @@ SplitCHCRes::computeQpOffDiagJacobian(unsigned int jvar)
   {
     return -_phi[_j][_qp] * _test[_i][_qp];
   }
-<<<<<<< HEAD
   else if (jvar == _c_j_var)
   {
     return (1.0 / _no_mols[_qp]) * 0.5 * _kappa[_qp] * _grad_phi[_j][_qp] * _grad_test[_i][_qp];
@@ -132,8 +110,4 @@ SplitCHCRes::computeQpOffDiagJacobian(unsigned int jvar)
   }
 
   //return 0.0;
-=======
-
-  return 0.0;
->>>>>>> 9021ce4c9f6eea65e79468d95de6f2b5dc7f05a2
 }

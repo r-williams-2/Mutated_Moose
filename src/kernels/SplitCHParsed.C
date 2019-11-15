@@ -18,11 +18,8 @@ validParams<SplitCHParsed>()
   InputParameters params = validParams<SplitCHCRes>();
   params.addClassDescription(
       "Split formulation Cahn-Hilliard Kernel that uses a DerivativeMaterial Free Energy");
-<<<<<<< HEAD
   //params.addRequiredCoupledVar("w", "chem poten");
   //params.addRequiredCoupledVar("c_j", "coupled concentrations");
-=======
->>>>>>> 9021ce4c9f6eea65e79468d95de6f2b5dc7f05a2
   params.addRequiredParam<MaterialPropertyName>(
       "f_name", "Base name of the free energy function F defined in a DerivativeParsedMaterial");
   params.addCoupledVar("args", "Vector of additional arguments to F");
@@ -33,15 +30,11 @@ SplitCHParsed::SplitCHParsed(const InputParameters & parameters)
   : DerivativeMaterialInterface<JvarMapKernelInterface<SplitCHCRes>>(parameters),
     _nvar(_coupled_moose_vars.size()),
     _dFdc(getMaterialPropertyDerivative<Real>("f_name", _var.name())),
-<<<<<<< HEAD
     _d2Fdc2(getMaterialPropertyDerivative<Real>("f_name", _var.name(), _var.name()))//,
     //_w_var(coupled("w")),
     //_w(coupledValue("w")),
     //_c_j_var(coupled("c_j")),
     //_c_j(coupledValue("c_j"))
-=======
-    _d2Fdc2(getMaterialPropertyDerivative<Real>("f_name", _var.name(), _var.name()))
->>>>>>> 9021ce4c9f6eea65e79468d95de6f2b5dc7f05a2
 {
   // reserve space for derivatives
   _d2Fdcdarg.resize(_nvar);
@@ -83,7 +76,6 @@ Real
 SplitCHParsed::computeQpOffDiagJacobian(unsigned int jvar)
 {
   if (jvar == _w_var)
-<<<<<<< HEAD
   {
     return SplitCHCRes::computeQpOffDiagJacobian(jvar);
   }
@@ -100,12 +92,4 @@ SplitCHParsed::computeQpOffDiagJacobian(unsigned int jvar)
 
     return (*_d2Fdcdarg[cvar])[_qp] * _phi[_j][_qp] * _test[_i][_qp];
   }
-=======
-    return SplitCHCRes::computeQpOffDiagJacobian(jvar);
-
-  // get the coupled variable jvar is referring to
-  const unsigned int cvar = mapJvarToCvar(jvar);
-
-  return (*_d2Fdcdarg[cvar])[_qp] * _phi[_j][_qp] * _test[_i][_qp];
->>>>>>> 9021ce4c9f6eea65e79468d95de6f2b5dc7f05a2
 }
