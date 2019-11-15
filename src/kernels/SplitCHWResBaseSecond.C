@@ -7,26 +7,19 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "SplitCHWResBase.h"
+#include "SplitCHWResBaseSecond.h"
 
 template <>
 InputParameters
-validParams<SplitCHWResBase<>>()
+validParams<SplitCHWResBaseSecond<>>()
 {
   InputParameters params = validParams<Kernel>();
   params.addClassDescription(
       "Split formulation Cahn-Hilliard Kernel for the chemical potential variable");
   params.addParam<MaterialPropertyName>("mob_name", "mobtemp", "The mobility used with the kernel");
   params.addCoupledVar("args", "Vector of arguments of the mobility");
-<<<<<<< HEAD
-  params.addRequiredCoupledVar ("c_i", "Concentration of species passed in."); // Coupled concentration for this term of the residual
+  params.addRequiredCoupledVar ("c_i", "Concentration of species for diffusion coefficient."); // First coupled concentration for this term of the residual. This is with the provision of M(c_i).
   params.addRequiredCoupledVar ("c_j", "Concentration of species for diffusion potential."); // Second coupled concentration for this term of the residual. Premultiplies the gradient of the variational derivative.
   params.addRequiredCoupledVar ("mu_j", "Coupled variational derivative."); // Coupled variational derivative for this term of the residual.
-  //params.addCoupledVar(
-  //    "w", "Coupled chemical potential (if not specified kernel variable will be used)");
-=======
-  params.addCoupledVar(
-      "w", "Coupled chemical potential (if not specified kernel variable will be used)");
->>>>>>> 9021ce4c9f6eea65e79468d95de6f2b5dc7f05a2
   return params;
 }

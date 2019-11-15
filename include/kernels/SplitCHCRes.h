@@ -29,6 +29,7 @@ protected:
   virtual Real computeQpOffDiagJacobian(unsigned int jvar);
 
   const MaterialProperty<Real> & _kappa;
+<<<<<<< HEAD
   const MaterialProperty<Real> & _no_mols; // Material property named _no_mols
   unsigned int _w_var; // Syntax for coupled variable.
   const VariableValue & _w; // Syntax for coupled variable.
@@ -36,5 +37,9 @@ protected:
   const VariableValue & _c_j; // Syntax for coupled variable. Needed for gradient of this variable.
   //std::vector<const VariableGradient *> _grad_coupled;
   const VariableGradient & _grad_coupled; // Gradient of the coupled variable.
+=======
+  unsigned int _w_var;
+  const VariableValue & _w;
+>>>>>>> 9021ce4c9f6eea65e79468d95de6f2b5dc7f05a2
 };
 

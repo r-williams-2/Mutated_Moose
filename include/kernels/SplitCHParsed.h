@@ -40,10 +40,13 @@ private:
   const unsigned int _nvar;
   const MaterialProperty<Real> & _dFdc;
   const MaterialProperty<Real> & _d2Fdc2;
+<<<<<<< HEAD
   //unsigned int _w_var;
   // const VariableValue & _w;
   // unsigned int _c_j_var;
   // const VariableValue & _c_j;
+=======
+>>>>>>> 9021ce4c9f6eea65e79468d95de6f2b5dc7f05a2
 
   std::vector<const MaterialProperty<Real> *> _d2Fdcdarg;
 };

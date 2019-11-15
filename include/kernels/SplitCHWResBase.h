@@ -41,6 +41,7 @@ protected:
   const MaterialPropertyName _mob_name;
   const MaterialProperty<T> & _mob;
 
+<<<<<<< HEAD
   unsigned int _c_i_var; // Syntax for defining the coupled concentration that this kernel applies to
   const VariableValue & _c_i; // Syntax for defining the coupled concentration that this kernel applies to
 
@@ -59,6 +60,16 @@ protected:
 
   /// Variable value for the chemical potential
   //const VariableGradient & _grad_w;
+=======
+  /// is the kernel used in a coupled form?
+  const bool _is_coupled;
+
+  /// int label for the chemical potential
+  unsigned int _w_var;
+
+  /// Variable value for the chemical potential
+  const VariableGradient & _grad_w;
+>>>>>>> 9021ce4c9f6eea65e79468d95de6f2b5dc7f05a2
 
   /// derivatives of the mobility
   std::vector<const MaterialProperty<T> *> _dmobdarg;
@@ -69,6 +80,7 @@ SplitCHWResBase<T>::SplitCHWResBase(const InputParameters & parameters)
   : DerivativeMaterialInterface<JvarMapKernelInterface<Kernel>>(parameters),
     _mob_name(getParam<MaterialPropertyName>("mob_name")),
     _mob(getMaterialProperty<T>("mob_name")),
+<<<<<<< HEAD
     _c_i_var(coupled("c_i")), // Syntax for defining the coupled concentration that this kernel applies to
     _c_i(coupledValue("c_i")), // Syntax for defining the coupled concentration that this kernel applies to
     _c_j_var(coupled("c_j")), // Syntax for defining the coupled concentration that this kernel applies to
@@ -79,6 +91,11 @@ SplitCHWResBase<T>::SplitCHWResBase(const InputParameters & parameters)
     //_is_coupled(isCoupled("w")),
     //_w_var(_is_coupled ? coupled("w") : _var.number()),
     //_grad_w(_is_coupled ? coupledGradient("w") : _grad_u)
+=======
+    _is_coupled(isCoupled("w")),
+    _w_var(_is_coupled ? coupled("w") : _var.number()),
+    _grad_w(_is_coupled ? coupledGradient("w") : _grad_u)
+>>>>>>> 9021ce4c9f6eea65e79468d95de6f2b5dc7f05a2
 {
   // Get number of coupled variables
   unsigned int nvar = _coupled_moose_vars.size();
@@ -95,16 +112,24 @@ template <typename T>
 Real
 SplitCHWResBase<T>::computeQpResidual()
 {
+<<<<<<< HEAD
   return _mob[_qp] * (1.0 - _c_i[_qp]) * _grad_u[_qp] * _grad_test[_i][_qp] - _mob[_qp] * _c_j[_qp] * _grad_coupled[_qp] * _grad_test[_i][_qp]; // Form of the residual for M(1-c_i)*grad(mu_i)*grad(test). grad(mu_i) is the gradient of the variational derivative of F wrt c_1
   //return _mob[_qp] * _grad_w[_qp] * _grad_test[_i][_qp];
+=======
+  return _mob[_qp] * _grad_w[_qp] * _grad_test[_i][_qp];
+>>>>>>> 9021ce4c9f6eea65e79468d95de6f2b5dc7f05a2
 }
 
 template <typename T>
 Real
 SplitCHWResBase<T>::computeQpJacobian()
 {
+<<<<<<< HEAD
   return _mob[_qp] * (1.0 - _c_i[_qp]) * _grad_phi[_j][_qp] * _grad_test[_i][_qp];
   //return (_is_coupled && _w_var != _var.number()) ? 0.0 : computeQpWJacobian();
+=======
+  return (_is_coupled && _w_var != _var.number()) ? 0.0 : computeQpWJacobian();
+>>>>>>> 9021ce4c9f6eea65e79468d95de6f2b5dc7f05a2
 }
 
 template <typename T>
@@ -118,6 +143,7 @@ template <typename T>
 Real
 SplitCHWResBase<T>::computeQpOffDiagJacobian(unsigned int jvar)
 {
+<<<<<<< HEAD
     if (jvar == _c_i_var)
   {
     return - _mob[_qp] * _phi[_j][_qp] * _grad_u[_qp] * _grad_test[_i][_qp];
@@ -145,4 +171,14 @@ SplitCHWResBase<T>::computeQpOffDiagJacobian(unsigned int jvar)
   //const unsigned int cvar = mapJvarToCvar(jvar);
 
   //return (*_dmobdarg[cvar])[_qp] * _phi[_j][_qp] * _grad_w[_qp] * _grad_test[_i][_qp];
+=======
+  // c Off-Diagonal Jacobian
+  if (_w_var == jvar)
+    return computeQpWJacobian();
+
+  // get the coupled variable jvar is referring to
+  const unsigned int cvar = mapJvarToCvar(jvar);
+
+  return (*_dmobdarg[cvar])[_qp] * _phi[_j][_qp] * _grad_w[_qp] * _grad_test[_i][_qp];
+>>>>>>> 9021ce4c9f6eea65e79468d95de6f2b5dc7f05a2
 }
