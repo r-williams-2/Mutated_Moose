@@ -6,13 +6,13 @@
   type = GeneratedMesh
   dim = 2
   elem_type = QUAD4
-  nx = 5#100
-  ny = 5#100
+  nx = 100
+  ny = 100
   nz = 0
   xmin = 0
-  xmax = 25.0e-9
+  xmax = 25.0#e-9
   ymin = 0
-  ymax = 25.0e-9
+  ymax = 25.0#e-9
   zmin = 0
   zmax = 0
   uniform_refine = 2
@@ -39,22 +39,22 @@
   [./c1]   # Mole fraction of species 1 (unitless)
     order = FIRST
     family = LAGRANGE
-    # scaling = 1e-12
+    # scaling = 1e-7
   [../]
   [./c2]   # Mole fraction of species 2 (unitless)
     order = FIRST
     family = LAGRANGE
-    # scaling = 1e-12
+    # scaling = 1e-7
   [../]
   [./mu1]   # Variational derivative for diffusion of species 1. Maybe in eV/mol
     order = FIRST
     family = LAGRANGE
-    # scaling = 1.0e32
+    # scaling = 1.0e15
   [../]
   [./mu2]   # Variational derivative for diffusion of species 1. Maybe in eV/mol
     order = FIRST
     family = LAGRANGE
-    # scaling = 1.0e32
+    # scaling = 1.0e15
   [../]
 []
 
@@ -111,12 +111,15 @@
     # value_left = 0.6
     # value_right = 0.3
     type = MultiBoundingBoxIC
-    # corners = '11.0 11.0 0   5.0 11.0 0   14.0 11.0 0   0.0 14.0 0   0.0 0.0 0   0.0 11.0 0   20.0 11.0 0'
-    # opposite_corners = '14.0 14.0 0   11.0 14.0 0   20.0 14.0 0   25.0 25.0 0   25.0 11.0 0   5.0 14.0 0   25.0 14.0 0'
-    # inside = '0.6   0.3   0.3   0.3   0.3   0.3   0.3'
-    corners = '11.0e-9 11.0e-9 0   5.0e-9 11.0e-9 0   14.0e-9 11.0e-9 0   0.0e-9 14.0e-9 0   0.0 0.0 0   0.0 11.0e-9 0   20.0e-9 11.0e-9 0'
-    opposite_corners = '14.0e-9 14.0e-9 0   11.0e-9 14.0e-9 0   20.0e-9 14.0e-9 0   25.0e-9 25.0e-9 0   25.0e-9 11.0e-9 0   5.0e-9 14.0e-9 0   25.0e-9 14.0e-9 0'
+    corners = '11.0 11.0 0   5.0 11.0 0   14.0 11.0 0   0.0 14.0 0   0.0 0.0 0   0.0 11.0 0   20.0 11.0 0'
+    opposite_corners = '14.0 14.0 0   11.0 14.0 0   20.0 14.0 0   25.0 25.0 0   25.0 11.0 0   5.0 14.0 0   25.0 14.0 0'
     inside = '0.6   0.3   0.3   0.3   0.3   0.3   0.3'
+    # corners = '44.0e-9 44.0e-9 0   20.0e-9 44.0e-9 0   56.0e-9 44.0e-9 0   0.0 56.0e-9 0   0.0 0.0 0   0.0 44.0e-9 0   80.0e-9 44.0e-9 0'
+    # opposite_corners = '56.0e-9 56.0e-9 0   44.0e-9 56.0e-9 0   80.0e-9 56.0e-9 0   100.0e-9 100.0e-9 0   100.0e-9 44.0e-9 0   20.0e-9 56.0e-9 0   100.0e-9 56.0e-9 0'
+    # inside = '0.6   0.3   0.3   0.3   0.3   0.3   0.3'
+    # corners = '0.11 0.11 0   0.05 0.11 0   0.14 0.11 0   0.0 0.14 0   0.0 0.0 0   0.0 0.11 0   0.2 0.11 0'
+    # opposite_corners = '0.14 0.14 0   0.11 0.14 0   0.2 0.14 0   0.25 0.25 0   0.25 0.11 0   0.05 0.14 0   0.25 0.14 0'
+    # inside = '0.6   0.3   0.3   0.3   0.3   0.3   0.3'
     #outside = 0.1
     variable = c1
 
@@ -147,12 +150,15 @@
     # x1 = 12.5
     # y1 = 12.5
     type = MultiBoundingBoxIC
-    # corners = '11.0 11.0 0   5.0 11.0 0   14.0 11.0 0   0.0 14.0 0   0.0 0.0 0   0.0 11.0 0   20.0 11.0 0'
-    # opposite_corners = '14.0 14.0 0   11.0 14.0 0   20.0 14.0 0   25.0 25.0 0   25.0 11.0 0   5.0 14.0 0   25.0 14.0 0'
-    # inside = '0.3   0.6   0.6   0.3   0.3   0.3   0.3'
-    corners = '11.0e-9 11.0e-9 0   5.0e-9 11.0e-9 0   14.0e-9 11.0e-9 0   0.0 14.0e-9 0   0.0 0.0 0   0.0 11.0e-9 0   20.0e-9 11.0e-9 0'
-    opposite_corners = '14.0e-9 14.0e-9 0   11.0e-9 14.0e-9 0   20.0e-9 14.0e-9 0   25.0e-9 25.0e-9 0   25.0e-9 11.0e-9 0   5.0e-9 14.0e-9 0   25.0e-9 14.0e-9 0'
+    corners = '11.0 11.0 0   5.0 11.0 0   14.0 11.0 0   0.0 14.0 0   0.0 0.0 0   0.0 11.0 0   20.0 11.0 0'
+    opposite_corners = '14.0 14.0 0   11.0 14.0 0   20.0 14.0 0   25.0 25.0 0   25.0 11.0 0   5.0 14.0 0   25.0 14.0 0'
     inside = '0.3   0.6   0.6   0.3   0.3   0.3   0.3'
+    # corners = '44.0e-9 44.0e-9 0   20.0e-9 44.0e-9 0   56.0e-9 44.0e-9 0   0.0 56.0e-9 0   0.0 0.0 0   0.0 44.0e-9 0   80.0e-9 44.0e-9 0'
+    # opposite_corners = '56.0e-9 56.0e-9 0   44.0e-9 56.0e-9 0   80.0e-9 56.0e-9 0   100.0e-9 100.0e-9 0   100.0e-9 44.0e-9 0   20.0e-9 56.0e-9 0   100.0e-9 56.0e-9 0'
+    # inside = '0.3   0.6   0.6   0.3   0.3   0.3   0.3'
+    # corners = '0.11 0.11 0   0.05 0.11 0   0.14 0.11 0   0.0 0.14 0   0.0 0.0 0   0.0 0.11 0   0.2 0.11 0'
+    # opposite_corners = '0.14 0.14 0   0.11 0.14 0   0.2 0.14 0   0.25 0.25 0   0.25 0.11 0   0.05 0.14 0   0.25 0.14 0'
+    # inside = '0.3   0.6   0.6   0.3   0.3   0.3   0.3'
     #outside = 0.1
     variable = c2
   [../]
@@ -245,10 +251,11 @@
     # an equation rather than a constant.
     type = GenericFunctionMaterial
     prop_names = 'kappa_c M sys_mols'
+    # length_scale = 1e-9, time_scale = 1e-9, energy_scale = 8314 J/mol
     # REALISTIC PROPS
-    prop_values = ' 6.6512e-8
-                    (1.0e-8)*0.5/(8314.0*1000.0)
-                    (1.0e-9)*(25.0e-9)*(25.0e-9)/(1.0e-5)'
+    # prop_values = ' 6.6512e-9/1e+27
+    #                 (1.0e-8)*0.5*(1e+27)/(8314.0*1000.0)
+    #                 1.0'#(1.0e-9)*(25.0e-9)*(25.0e-9)/(1.0e-5)
     # prop_values = ' 6.6512e-8*1e-30
     #                 ((1.0e-8)*((1.0e+9)^2)*0.5/(6.242e+18*8314.0*1000.0))/1e-30
     #                 (1.0)*(25.0)*(25.0)/(1.0e+22)'
@@ -266,26 +273,33 @@
     # prop_values = '6.512e-2
     #                (1.0*10.0^-2)*0.5/(8314.0*1000.0)
     #                1.0'
+    prop_values = '8.0
+                   (16.0)*0.5/(8314.0*1000.0)
+                   1.0'
+    # OTHER MATERIAL PROPS
+    # prop_values = ' VALUE
+    #                  VALUE
+    #                  VALUE'#(1.0e-9)*(25.0e-9)*(25.0e-9)/(1.0e-5)
   [../]
   [./local_energy]
     # Defines the function for the local free energy density as given in the
     # problem, then converts units and adds scaling factor.
     type = DerivativeParsedMaterial
     f_name = f_loc
-    args = 'c1   c2   T'#   c3
+    args = 'c1   c2   T'#c3   
     # WORKING
-    # constant_names = 'n   Omega12   Omega13   Omega23   R'
-    # constant_expressions = '1.0   -10.0   -10.0   -10   8.314'
-    # function = '(1/n)*(Omega12*c1*c2 + Omega13*c1*c3 + Omega23*c2*c3 + R*T*(c1*log(c1) + c2*log(c2) + c3*log(c3)))'
+    constant_names = 'n   Omega12   Omega13   Omega23   R'
+    constant_expressions = '1.0   -10.0   -10.0   -10   8314'
+    function = '(1/n)*(Omega12*c1*c2 + Omega13*c1*(1.0-c1-c2) + Omega23*c2*(1.0-c1-c2) + T*(c1*log(c1) + c2*log(c2) + (1.0-c1-c2)*log(1.0-c1-c2)))'
     # constant_expressions = '25.0*25.0/(10.0^22.0)   -10.0*8314.0   -10.0*8314.0   -10.0*8314.0   8314.0'
     # function = '(1/n)*(Omega12*c1*c2 + Omega13*c1*c3 + Omega23*c2*c3 + R*T*(c1*log(c1) + c2*log(c2) + c3*log(c3)))'
     # WORKING
     # constant_expressions = '1.0   -10.0*8314.0   -10.0*8314.0   -10.0*8314.0   8314.0'
-    # function = '(1/n)*(Omega12*c1*c2 + Omega13*c1*c3 + Omega23*c2*c3 + R*T*(c1*log(c1) + c2*log(c2) + c3*log(c3)))'
+    # function = '(1.0/n)*(Omega12*c1*c2 + Omega13*c1*(1.0-c1-c2) + Omega23*c2*(1.0-c1-c2) + R*T*(c1*log(c1) + c2*log(c2) + (1.0-c1-c2)*log(1.0-c1-c2)))/1e+27'#(Omega12*c1*c2 + Omega13*c1*c3 + Omega23*c2*c3 + R*T*(c1*log(c1) + c2*log(c2) + c3*log(c3)))
     # NOT WORKING, UNNORMALISED
-    constant_names = 'Nmols   Omega12   Omega13   Omega23   R'
-    constant_expressions = '(1.0e-9)*(25.0e-9)*(25.0e-9)/(1.0e-5)   -10.0*8314.0   -10.0*8314.0   -10.0*8314.0   8314.0'
-    function = '(1.0/Nmols)*(Omega12*c1*c2 + Omega13*c1*(1.0-c1-c2) + Omega23*c2*(1.0-c1-c2) + R*T*(c1*log(c1) + c2*log(c2) + (1.0-c1-c2)*log(1.0-c1-c2)))'
+    # constant_names = 'Nmols   Omega12   Omega13   Omega23   R'
+    # constant_expressions = '(1.0e-9)*(25.0e-9)*(25.0e-9)/(1.0e-5)   -10.0*8314.0   -10.0*8314.0   -10.0*8314.0   8314.0'
+    # function = '(1.0/Nmols)*(Omega12*c1*c2 + Omega13*c1*(1.0-c1-c2) + Omega23*c2*(1.0-c1-c2) + R*T*(c1*log(c1) + c2*log(c2) + (1.0-c1-c2)*log(1.0-c1-c2)))'
     # constant_names = 'Nmols   Omega12   Omega13   Omega23   R'
     # constant_expressions = '(1.0)*(25.0)*(25.0)/(1.0e+22)   -10.0*8314.0   -10.0*8314.0   -10.0*8314.0   8314.0'
     # function = '((1e-30)*(6.242e+18)/Nmols)*(Omega12*c1*c2 + Omega13*c1*(1.0-c1-c2) + Omega23*c2*(1.0-c1-c2) + R*(c1*log(c1) + c2*log(c2) + (1.0-c1-c2)*log(1.0-c1-c2)))'
@@ -293,6 +307,9 @@
     # constant_names = 'n   Omega12   Omega13   Omega23   R'
     # constant_expressions = '1.0   -10.0*8314.0   -10.0*8314.0   -10.0*8314.0   8314.0'
     # function = '(1/n)*(Omega12*c1*c2 + Omega13*c1*c3 + Omega23*c2*c3 + R*T*(c1*log(c1) + c2*log(c2) + c3*log(c3)))'
+    # OTHER MATERIAL PROPS
+    # constant_expressions = 'VALUE   VALUE   VALUE   VALUE   VALUE'
+    # function = '(1.0/n)*(Omega12*c1*c2 + Omega13*c1*c3 + Omega23*c2*c3 + R*T*(c1*log(c1) + c2*log(c2) + c3*log(c3)))/8314.0'
 
     derivative_order = 2
   [../]
@@ -317,16 +334,16 @@
   [../]
 []
 
-# # [Preconditioning]
-# #   # [./coupled]
-# #   #   type = SMP
-# #   #   full = true
-# #   # [../]
-# #   # [./FDP]
-# #   #   type = FDP
-# #   #   full = true
-# #   # [../]
-# # []
+# [Preconditioning]
+#   [./coupled]
+#     type = SMP
+#     full = true
+#   [../]
+#   # [./FDP]
+#   #   type = FDP
+#   #   full = true
+#   # [../]
+# []
 
 # [Executioner]
 #   type = Transient
@@ -334,8 +351,8 @@
 #   l_max_its = 100
 #   l_tol = 1e-6
 #   nl_max_its = 50
-#   nl_rel_tol = 1e-8
-#   # nl_abs_tol = 1e-9
+#   # nl_rel_tol = 1e-8
+#   nl_abs_tol = 1e-9
 #   # line_search = none
 #   end_time = 600.0#7200   # seconds
 #   petsc_options = '-ksp_converged_reason -ksp_monitor_true_residual -snes_converged_reason -snes_linesearch_monitor' #-snes_check_jacobian -pc_svd_monitor -snes_check_jacobian_view -snes_view -log_view    -snes_fd - -snes_error_if_not_converged -ksp_error_if_not_converged'
@@ -386,16 +403,16 @@
   l_max_its = 30
   l_tol = 1e-6
   nl_max_its = 50
-  # nl_abs_tol = 1e-9
-  nl_rel_tol = 1e-3
+  nl_abs_tol = 1e-9
+  # nl_rel_tol = 1e-3
   end_time = 600.0   # seconds.
-  automatic_scaling = true
-  # petsc_options_iname = '-pc_type -ksp_gmres_restart -sub_ksp_type
-  #                        -sub_pc_type -pc_asm_overlap'
-  # petsc_options_value = 'asm      31                  preonly
-  #                        ilu          1'
-  petsc_options_iname = '-pc_type'
-  petsc_options_value = 'lu'
+  # automatic_scaling = true
+  petsc_options_iname = '-pc_type -ksp_gmres_restart -sub_ksp_type
+                         -sub_pc_type -pc_asm_overlap'
+  petsc_options_value = 'asm      31                  preonly
+                         ilu          1'
+  # petsc_options_iname = '-pc_type'
+  # petsc_options_value = 'lu'
   [./TimeStepper]
     type = IterationAdaptiveDT
     dt = 0.1
