@@ -187,7 +187,7 @@
   [./coupled_res_c1_Prim]
     variable = mu1
     type = SplitCHWRes#Prim
-    mob_name = M
+    mob_name = M1
     c_i = c1
     c_j = c2
     mu_j = mu2
@@ -205,7 +205,7 @@
     type = SplitCHParsed
     f_name = f_loc
     kappa_name = kappa_c
-    mols_in_sys = sys_mols
+    # mols_in_sys = sys_mols
     w = mu1
     c_j = c2
   [../]
@@ -217,7 +217,7 @@
   [./coupled_res_c2_Prim]
     variable = mu2
     type = SplitCHWRes#Prim
-    mob_name = M
+    mob_name = M2
     c_i = c2
     c_j = c1
     mu_j = mu1
@@ -235,7 +235,7 @@
     type = SplitCHParsed
     f_name = f_loc
     kappa_name = kappa_c
-    mols_in_sys = sys_mols
+    # mols_in_sys = sys_mols
     c_j = c1
     w = mu2
   [../]
@@ -243,6 +243,32 @@
 
 #NEEDS CHANGED
 [Materials]
+  [./mobility_1]               # Mobility (nm^2 mol/eV/s)
+    type = DerivativeParsedMaterial
+    f_name = M1
+    args = 'c1 T'
+    constant_names =       'R'
+    constant_expressions = '8314.0'
+    function = '(16.0)*c1/(8314.0*T)'
+    derivative_order = 1
+    outputs = exodus
+  [../]
+  [./mobility_2]               # Mobility (nm^2 mol/eV/s)
+    type = DerivativeParsedMaterial
+    f_name = M2
+    args = 'c2 T'
+    constant_names =       'R'
+    constant_expressions = '8314.0'
+    function = '(16.0)*c2/(8314.0*T)'
+    derivative_order = 1
+    outputs = exodus
+  [../]
+  # [./kappa]                  # Gradient energy coefficient (eV nm^2/mol)
+  #   type = GenericFunctionMaterial
+  #   prop_names = 'kappa_c'
+  #   prop_values = '8.125e-16*6.24150934e+18*1e+09^2*1e-27'
+  #                 # kappa_c*eV_J*nm_m^2*d
+  # [../]
   # d is a scaling factor that makes it easier for the solution to converge
   # without changing the results. It is defined in each of the materials and
   # must have the same value in each one.
@@ -250,7 +276,7 @@
     # Define constant values kappa_c and M. Eventually M will be replaced with
     # an equation rather than a constant.
     type = GenericFunctionMaterial
-    prop_names = 'kappa_c M sys_mols'
+    prop_names = 'kappa_c sys_mols'
     # length_scale = 1e-9, time_scale = 1e-9, energy_scale = 8314 J/mol
     # REALISTIC PROPS
     # prop_values = ' 6.6512e-9/1e+27
@@ -273,9 +299,8 @@
     # prop_values = '6.512e-2
     #                (1.0*10.0^-2)*0.5/(8314.0*1000.0)
     #                1.0'
-    prop_values = '8.0
-                   (16.0)*0.5/(8314.0*1000.0)
-                   1.0'
+    # REALISTIC NORMALISED PROPS
+    prop_values = '8.0 1.0'
     # OTHER MATERIAL PROPS
     # prop_values = ' VALUE
     #                  VALUE
