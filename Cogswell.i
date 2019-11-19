@@ -263,49 +263,51 @@
     derivative_order = 1
     outputs = exodus
   [../]
-  # [./kappa]                  # Gradient energy coefficient (eV nm^2/mol)
-  #   type = GenericFunctionMaterial
-  #   prop_names = 'kappa_c'
-  #   prop_values = '8.125e-16*6.24150934e+18*1e+09^2*1e-27'
-  #                 # kappa_c*eV_J*nm_m^2*d
-  # [../]
+  [./kappa]                  # Gradient energy coefficient (eV nm^2/mol)
+    type = GenericFunctionMaterial
+    prop_names = 'kappa11 kappa22 kappa12'
+    prop_values = '8.0 8.0 8.0'
+    # prop_names = 'kappa_c'
+    # prop_values = '8.0'
+                  # kappa_c*eV_J*nm_m^2*d
+  [../]
   # d is a scaling factor that makes it easier for the solution to converge
   # without changing the results. It is defined in each of the materials and
   # must have the same value in each one.
-  [./constants]
-    # Define constant values kappa_c and M. Eventually M will be replaced with
-    # an equation rather than a constant.
-    type = GenericFunctionMaterial
-    prop_names = 'kappa_c sys_mols'
-    # length_scale = 1e-9, time_scale = 1e-9, energy_scale = 8314 J/mol
-    # REALISTIC PROPS
-    # prop_values = ' 6.6512e-9/1e+27
-    #                 (1.0e-8)*0.5*(1e+27)/(8314.0*1000.0)
-    #                 1.0'#(1.0e-9)*(25.0e-9)*(25.0e-9)/(1.0e-5)
-    # prop_values = ' 6.6512e-8*1e-30
-    #                 ((1.0e-8)*((1.0e+9)^2)*0.5/(6.242e+18*8314.0*1000.0))/1e-30
-    #                 (1.0)*(25.0)*(25.0)/(1.0e+22)'
-    # prop_values = '6.6512e-9
-    #                (1.0*10.0^-8)*0.5/(8314.0*1000.0)
-    #                1.0'
-    # prop_values = '6.512e-2
-    #                (1.0*10.0^-2)*0.5/(8314.0*1000.0)
-    #                1.0'
-    # prop_values = '6.6512*10^(-17.0)
-    #                10.0^(10.0)*0.46774/(8314.0*1000.0)
-    #                25.0*25.0/(10.0^(22.0))'#x1*x2*(c1/Vm1+c2/Vm2+(1-c1-c2)/vm3)'
-                   # kappa_c*eV_J*nm_m^2*d
-                   # M*nm_m^2/eV_J/d
-    # prop_values = '6.512e-2
-    #                (1.0*10.0^-2)*0.5/(8314.0*1000.0)
-    #                1.0'
-    # REALISTIC NORMALISED PROPS
-    prop_values = '8.0 1.0'
-    # OTHER MATERIAL PROPS
-    # prop_values = ' VALUE
-    #                  VALUE
-    #                  VALUE'#(1.0e-9)*(25.0e-9)*(25.0e-9)/(1.0e-5)
-  [../]
+  # [./constants]
+  #   # Define constant values kappa_c and M. Eventually M will be replaced with
+  #   # an equation rather than a constant.
+  #   type = GenericFunctionMaterial
+  #   prop_names = 'kappa_c sys_mols'
+  #   # length_scale = 1e-9, time_scale = 1e-9, energy_scale = 8314 J/mol
+  #   # REALISTIC PROPS
+  #   # prop_values = ' 6.6512e-9/1e+27
+  #   #                 (1.0e-8)*0.5*(1e+27)/(8314.0*1000.0)
+  #   #                 1.0'#(1.0e-9)*(25.0e-9)*(25.0e-9)/(1.0e-5)
+  #   # prop_values = ' 6.6512e-8*1e-30
+  #   #                 ((1.0e-8)*((1.0e+9)^2)*0.5/(6.242e+18*8314.0*1000.0))/1e-30
+  #   #                 (1.0)*(25.0)*(25.0)/(1.0e+22)'
+  #   # prop_values = '6.6512e-9
+  #   #                (1.0*10.0^-8)*0.5/(8314.0*1000.0)
+  #   #                1.0'
+  #   # prop_values = '6.512e-2
+  #   #                (1.0*10.0^-2)*0.5/(8314.0*1000.0)
+  #   #                1.0'
+  #   # prop_values = '6.6512*10^(-17.0)
+  #   #                10.0^(10.0)*0.46774/(8314.0*1000.0)
+  #   #                25.0*25.0/(10.0^(22.0))'#x1*x2*(c1/Vm1+c2/Vm2+(1-c1-c2)/vm3)'
+  #                  # kappa_c*eV_J*nm_m^2*d
+  #                  # M*nm_m^2/eV_J/d
+  #   # prop_values = '6.512e-2
+  #   #                (1.0*10.0^-2)*0.5/(8314.0*1000.0)
+  #   #                1.0'
+  #   # REALISTIC NORMALISED PROPS
+  #   prop_values = '8.0 1.0'
+  #   # OTHER MATERIAL PROPS
+  #   # prop_values = ' VALUE
+  #   #                  VALUE
+  #   #                  VALUE'#(1.0e-9)*(25.0e-9)*(25.0e-9)/(1.0e-5)
+  # [../]
   [./local_energy]
     # Defines the function for the local free energy density as given in the
     # problem, then converts units and adds scaling factor.
@@ -313,9 +315,9 @@
     f_name = f_loc
     args = 'c1   c2   T'#c3   
     # WORKING
-    constant_names = 'n   Omega12   Omega13   Omega23   R'
-    constant_expressions = '1.0   -10.0   -10.0   -10   8314'
-    function = '(1/n)*(Omega12*c1*c2 + Omega13*c1*(1.0-c1-c2) + Omega23*c2*(1.0-c1-c2) + T*(c1*log(c1) + c2*log(c2) + (1.0-c1-c2)*log(1.0-c1-c2)))'
+    constant_names = 'Omega12   Omega13   Omega23   R'
+    constant_expressions = '-10.0   -10.0   -10   8314'
+    function = '(Omega12*c1*c2 + Omega13*c1*(1.0-c1-c2) + Omega23*c2*(1.0-c1-c2) + T*(c1*log(c1) + c2*log(c2) + (1.0-c1-c2)*log(1.0-c1-c2)))'
     # constant_expressions = '25.0*25.0/(10.0^22.0)   -10.0*8314.0   -10.0*8314.0   -10.0*8314.0   8314.0'
     # function = '(1/n)*(Omega12*c1*c2 + Omega13*c1*c3 + Omega23*c2*c3 + R*T*(c1*log(c1) + c2*log(c2) + c3*log(c3)))'
     # WORKING
